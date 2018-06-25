@@ -15,9 +15,8 @@
  **/
 
 import XCTest
+@testable import KituraWebSocketNIOTests
 
-import KituraNIOWebSocketTests
-
-var tests = [XCTestCaseEntry]()
-tests += Kitura_WebSocket_NIOTests.allTests()
-XCTMain(tests)
+XCTMain([
+    testCase(Kitura_WebSocket_NIOTests.allTests),
+])

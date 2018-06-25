@@ -1,0 +1,33 @@
+# Travis CI build file for Kitura-WebSocket-NIO.
+# Runs on Linux (Ubuntu v14.04, Ubuntu 16.04 in docker) and macOS.
+
+# whitelist (branches that should be built)
+branches:
+  only:
+    - master
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      sudo: true
+      env: SWIFT_SNAPSHOT=4.1
+    - os: linux
+      dist: trusty
+      sudo: true
+      env: SWIFT_SNAPSHOT=swift-4.2-DEVELOPMENT-SNAPSHOT-2018-06-15-a
+    - os: linux
+      dist: trusty
+      sudo: true
+      services: docker
+      env: DOCKER_IMAGE=ubuntu:16.04 SWIFT_SNAPSHOT=4.1
+    - os: osx
+      osx_image: xcode9.3
+      sudo: true
+      env: SWIFT_SNAPSHOT=4.1
+
+before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew install libressl ; fi
+
+script:
+    - ./build.sh
