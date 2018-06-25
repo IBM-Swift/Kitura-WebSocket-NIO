@@ -121,7 +121,7 @@ extension WebSocketConnection: ChannelInboundHandler {
                 }
 
                 if frame.fin {
-                    fireReceivedData(data: frame.data.data)
+                    fireReceivedData(data: frame.data.getData(at: 0, length: frame.data.readableBytes) ?? Data())
                 } else {
                     var buffer = frame.data
                     messageState = .binary
@@ -139,7 +139,7 @@ extension WebSocketConnection: ChannelInboundHandler {
                 if frame.fin {
                     switch messageState {
                     case .binary:
-                        fireReceivedData(data: frame.data.data)
+                        fireReceivedData(data: frame.data.getData(at: 0, length: frame.data.readableBytes) ?? Data())
                     case .text:
                         fireReceivedString(message: frame.data.getString(at: 0, length: frame.data.readableBytes) ?? "") 
                     case .unknown: //not possible
@@ -289,12 +289,5 @@ extension WebSocketCloseReasonCode {
         case .unexpectedServerError: return .serverError
         case .unknown(let code): return .userDefined(code)
         }
-    }
-}
-
-extension ByteBuffer {
-    public var data: Data {
-       let bytes = self.getBytes(at: 0, length: self.readableBytes) ?? []
-      return Data(bytes: bytes) 
     }
 }
