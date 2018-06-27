@@ -32,7 +32,7 @@ public class WebSocketConnection {
     
     public let id = UUID().uuidString
 
-    public let request: HTTPRequestHead? //TEMP
+    public let request: ServerRequest?
 
     var awaitClose = false
 
@@ -42,7 +42,7 @@ public class WebSocketConnection {
 
     var ctx: ChannelHandlerContext!
 
-    init(request: HTTPRequestHead) { 
+    init(request: ServerRequest) {
         self.request = request
     }
 

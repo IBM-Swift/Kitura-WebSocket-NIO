@@ -28,12 +28,12 @@ public class WSConnectionUpgradeFactory: ProtocolHandlerFactory {
         ConnectionUpgrader.register(handlerFactory: self)
     }
 
-    public func handler(for request: HTTPRequestHead) -> ChannelHandler {
-        let service = registry[request.uri]
+    public func handler(for request: ServerRequest) -> ChannelHandler {
+        let wsRequest = WSServerRequest(request: request)
+        let service = registry[wsRequest.urlURL.path]
 
-        let connection = WebSocketConnection(request: request)
+        let connection = WebSocketConnection(request: wsRequest)
         connection.service = service
-
 
         return connection
     }
