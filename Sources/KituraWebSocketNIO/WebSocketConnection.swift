@@ -121,7 +121,7 @@ extension WebSocketConnection: ChannelInboundHandler {
                 }
 
                 if frame.fin {
-                    fireReceivedData(data: frame.data.getData(at: 0, length: frame.data.readableBytes) ?? Data())
+                    fireReceivedData(data: frame.unmaskedData.getData(at: 0, length: frame.unmaskedData.readableBytes) ?? Data())
                 } else {
                     var buffer = frame.data
                     messageState = .binary
@@ -153,7 +153,7 @@ extension WebSocketConnection: ChannelInboundHandler {
                     let reasonCode: WebSocketErrorCode
                     var description: String? = nil
                     if frame.length >= 2 && frame.length < 126 {
-                        var frameData = frame.data
+                        var frameData = frame.unmaskedData
                         reasonCode = frameData.readWebSocketErrorCode() ?? WebSocketErrorCode.unknown(0) //TODO: what's a default value for error code?
                         description = getDescription(from: frameData)
                         if description == nil {
