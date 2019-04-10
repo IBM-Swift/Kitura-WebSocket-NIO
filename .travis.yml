@@ -9,10 +9,6 @@
 branches:
   only:
     - master
-    - develop
-    - /^issue.*$/
-    - websocket-nio
-    - websocket-nio2
 
 matrix:
   include:
@@ -40,7 +36,6 @@ matrix:
       env: SWIFT_SNAPSHOT=$SWIFT_DEVELOPMENT_SNAPSHOT
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew install libressl ; fi
   - git clone https://github.com/IBM-Swift/Package-Builder.git
 
 script:
