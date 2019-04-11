@@ -12,7 +12,7 @@ run_autobahn()
 {
     # The first argument holds the lists of tests to be run
     TESTS=$1
-
+    NTESTS=$2
     # Launch the WebSocketService, save its PID
     swift run TestWebSocketService &
     PID=$!
@@ -26,18 +26,18 @@ run_autobahn()
     # Run the autobahn fuzzingclient
     wstest -m fuzzingclient
 
-    # If autobahn fails for some reason, exit the script
-    AUTOBAHN_STATUS=$?
-    if [ $AUTOBAH_STATUS -ne 0 ]; then
-        return $AUTOBAH_STATUS
-    fi
-
     # Count the number of failed tests or unclean connection closures
     FAILED_OR_UNCLEAN=`grep behavior reports/servers/index.json | cut -d':' -f2 | cut -d'"' -f2 | sort -u | xargs | grep -E "FAILED|UNCLEAN" | wc -l`
     if [ $FAILED_OR_UNCLEAN -ne "0" ]; then
         return $FAILED_OR_UNCLEAN
     fi
 
+    TOTAL_TESTS=`grep behaviorClose reports/servers/index.json | wc -l`
+
+    # Check if all tests completed
+    if [ $TOTAL_TESTS -ne $NTESTS ]; then
+        return 1
+    fi
     # Kill the service
     kill $PID
 
@@ -69,13 +69,13 @@ travis_end
 
 travis_start "autobahn_run"
 # Run tests 1-4
-run_autobahn \"1.*\",\"2.*\",\"3.*\",\"4.*\"
+run_autobahn \"1.*\",\"2.*\",\"3.*\",\"4.*\" 44
 
 # Run tests 5-8
-run_autobahn \"5.*\",\"6.*\",\"7.*\",\"8.*\"
+run_autobahn \"5.*\",\"6.*\",\"7.*\",\"8.*\" 202
 
 # Run tests 9-10
-run_autobahn \"9.*\",\"10.*\"
+run_autobahn \"9.*\",\"10.*\" 55
 
 # Run tests 12-13, disabled due to a hang that happens only in the CI
 # run_autobahn \"12.*\",\"13.*\"
