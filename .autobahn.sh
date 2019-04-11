@@ -34,6 +34,8 @@ run_autobahn()
 
     TOTAL_TESTS=`grep behaviorClose reports/servers/index.json | wc -l`
 
+    echo "total run: $TOTAL_TESTS"
+    echo "total tests: $NTESTS"
     # Check if all tests completed
     if [ $TOTAL_TESTS -ne $NTESTS ]; then
         return 1
