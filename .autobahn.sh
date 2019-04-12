@@ -34,11 +34,11 @@ run_autobahn()
 
     TOTAL_TESTS=`grep behaviorClose reports/servers/index.json | wc -l`
 
-    echo "total run: $TOTAL_TESTS"
-    echo "total tests: $NTESTS"
+    echo "Executed $TOTAL_TESTS out of $NTESTS tests"
     # Check if all tests completed
     if [ $TOTAL_TESTS -ne $NTESTS ]; then
-        return 1
+        echo "All of the configured tests were not executed, possibly because the server wasn't available."
+        exit 1
     fi
     # Kill the service
     kill $PID
