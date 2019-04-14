@@ -13,12 +13,13 @@ run_autobahn()
     # The first argument holds the lists of tests to be run
     TESTS=$1
     NTESTS=$2
-    # Launch the WebSocketService, save its PID
-    swift run TestWebSocketService &
+
+    # Launch the TestWebSocketService, save its PID
+    ./.build/x86_64-unknown-linux/release/TestWebSocketService &
     PID=$!
 
     # Make sure the server has enough time to be up and running
-    sleep 5
+    sleep 2 
 
     # Generate the fuzzingclient.json
     fuzzing_client $TESTS
@@ -56,7 +57,7 @@ if [ $SWIFT_TEST_STATUS -ne 0 ]; then
     return $SWIFT_TEST_STATUS
 fi
 
-# Build and run the TestWebSocketService
+# Build TestWebSocketService
 echo "Building in release mode for autobahn testing"
 swift build -c release
 
