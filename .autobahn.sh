@@ -21,7 +21,7 @@ run_autobahn()
     fi
 
     # Launch the TestWebSocketService, save its PID
-    ./.build/$PLATFORM/release/TestWebSocketService &
+    ./.build/$PLATFORM_SUBDIR/release/TestWebSocketService &
     PID=$!
 
     # Make sure the server has enough time to be up and running
