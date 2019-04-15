@@ -15,11 +15,11 @@ run_autobahn()
     NTESTS=$2
 
     # Launch the TestWebSocketService, save its PID
-    ./.build/x86_64-unknown-linux/release/TestWebSocketService &
+    swift run -c release &
     PID=$!
 
     # Make sure the server has enough time to be up and running
-    sleep 2 
+    sleep 5
 
     # Generate the fuzzingclient.json
     fuzzing_client $TESTS
@@ -48,6 +48,18 @@ run_autobahn()
     rm -rf reports fuzzingclient.json
 }
 
+install_autobahn() {
+    if [ `uname` == "Linux" ]; then
+        apt-get update \
+            && apt-get -y upgrade \
+            && apt-get -y install sudo \
+            && sudo apt-get -y install python-pip \
+            && pip install autobahntestsuite
+    else
+        brew install python && pip install autobahntestsuite
+    fi
+}
+
 # Run swift test
 travis_start "swift_test"
 swift test
@@ -63,11 +75,7 @@ swift build -c release
 
 # Install python, pip and autobahn
 travis_start "autobahn_install"
-apt-get update \
-    && apt-get -y upgrade \
-    && apt-get -y install sudo \
-    && sudo apt-get -y install python-pip \
-    && pip install autobahntestsuite
+install_autobahn
 travis_end
 
 travis_start "autobahn_run"
