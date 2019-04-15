@@ -62,7 +62,7 @@ install_autobahn() {
             && sudo apt-get -y install python-pip \
             && pip install autobahntestsuite
     else
-        brew install python && pip install autobahntestsuite
+        pip install autobahntestsuite
     fi
 }
 
