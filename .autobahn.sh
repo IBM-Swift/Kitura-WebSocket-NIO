@@ -14,8 +14,14 @@ run_autobahn()
     TESTS=$1
     NTESTS=$2
 
+    if [ `uname` == `Linux` ]; then
+        PLATFORM_SUBDIR="x86_64-unknown-linux"
+    else
+        PLATFORM_SUBDIR="x86_64-apple-macosx"
+    fi
+
     # Launch the TestWebSocketService, save its PID
-    swift run -c release &
+    ./.build/$PLATFORM/release/TestWebSocketService &
     PID=$!
 
     # Make sure the server has enough time to be up and running
