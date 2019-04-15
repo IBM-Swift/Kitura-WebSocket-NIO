@@ -14,7 +14,7 @@ run_autobahn()
     TESTS=$1
     NTESTS=$2
 
-    if [ `uname` == `Linux` ]; then
+    if [ `uname` == "Linux" ]; then
         PLATFORM_SUBDIR="x86_64-unknown-linux"
     else
         PLATFORM_SUBDIR="x86_64-apple-macosx"
