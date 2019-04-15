@@ -1,5 +1,4 @@
 # A script that runs swift test followed by the autobahn test suite.
-# Note: this is script must be used only on Linux for now.
 
 # Generate the fuzzingclient.json file for the given tests
 fuzzing_client() {
@@ -20,7 +19,7 @@ run_autobahn()
         PLATFORM_SUBDIR="x86_64-apple-macosx"
     fi
 
-    # Launch the TestWebSocketService, save its PID
+    # Launch the TestWebSocketService, save its pid
     ./.build/$PLATFORM_SUBDIR/release/TestWebSocketService &
     PID=$!
 
@@ -47,6 +46,7 @@ run_autobahn()
         echo "All of the configured tests were not executed, possibly because the server wasn't available."
         exit 1
     fi
+
     # Kill the service
     kill $PID
 
