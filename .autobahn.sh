@@ -32,18 +32,20 @@ run_autobahn()
     # Run the autobahn fuzzingclient
     wstest -m fuzzingclient
 
-    # Count the number of failed tests or unclean connection closures
-    FAILED_OR_UNCLEAN=`grep behavior reports/servers/index.json | cut -d':' -f2 | cut -d'"' -f2 | sort -u | xargs | grep -E "FAILED|UNCLEAN" | wc -l`
-    if [ $FAILED_OR_UNCLEAN -ne "0" ]; then
-        return $FAILED_OR_UNCLEAN
-    fi
-
+    # Count the total number of tests that executed
     TOTAL_TESTS=`grep behaviorClose reports/servers/index.json | wc -l`
 
     echo "Executed $TOTAL_TESTS out of $NTESTS tests"
     # Check if all tests completed
     if [ $TOTAL_TESTS -ne $NTESTS ]; then
         echo "All of the configured tests were not executed, possibly because the server wasn't available."
+        exit 1
+    fi
+
+    # Count the number of failed tests or unclean connection closures
+    FAILED_OR_UNCLEAN=`grep behavior reports/servers/index.json | cut -d':' -f2 | cut -d'"' -f2 | sort -u | xargs | grep -E "FAILED|UNCLEAN" | wc -l`
+    if [ $FAILED_OR_UNCLEAN -ne "0" ]; then
+        echo "$FAILED_OR_UNCLEAN out of $NTESTS tests failed or resulted in unclean connection closures."
         exit 1
     fi
 
@@ -77,7 +79,9 @@ fi
 
 # Build TestWebSocketService
 echo "Building in release mode for autobahn testing"
+travis_start "swift_build"
 swift build -c release
+travis_end
 
 # Install python, pip and autobahn
 travis_start "autobahn_install"
