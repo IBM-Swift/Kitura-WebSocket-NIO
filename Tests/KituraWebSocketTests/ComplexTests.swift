@@ -29,7 +29,11 @@ class ComplexTests: KituraTest {
             ("testPingBetweenBinaryFrames", testPingBetweenBinaryFrames),
             ("testPingBetweenTextFrames", testPingBetweenTextFrames),
             ("testTextShortAndMediumFrames", testTextShortAndMediumFrames),
-            ("testTextTwoShortFrames", testTextTwoShortFrames)
+            ("testTextTwoShortFrames", testTextTwoShortFrames),
+            ("testTwoMessagesWithContextTakeover", testTwoMessagesWithContextTakeover),
+            ("testTwoMessagesWithClientContextTakeover", testTwoMessagesWithClientContextTakeover),
+            ("testTwoMessagesWithServerContextTakeover", testTwoMessagesWithServerContextTakeover),
+            ("testTwoMessagesWithNoContextTakeover", testTwoMessagesWithNoContextTakeover),
         ]
     }
 
@@ -58,7 +62,7 @@ class ComplexTests: KituraTest {
                 self.performTest(framesToSend: [(false, self.opcodeBinary, shortBinaryPayload), (true, self.opcodeContinuation, mediumBinaryPayload)],
                                  expectedFrames: [(true, self.opcodeBinary, expectedBinaryPayload)],
                                  expectation: expectation, negotiateCompression: true, compressed: true)
-            },  { expectation in
+            }, { expectation in
                 self.performTest(framesToSend: [(false, self.opcodeBinary, shortBinaryPayload), (true, self.opcodeContinuation, mediumBinaryPayload)],
                                  expectedFrames: [(true, self.opcodeBinary, expectedBinaryPayload)],
                                  expectation: expectation, negotiateCompression: true, compressed: false)
@@ -182,5 +186,34 @@ class ComplexTests: KituraTest {
                                  expectedFrames: [(true, self.opcodeText, textExpectedPayload)],
                                  expectation: expectation, negotiateCompression: true, compressed: false)
         })
+    }
+
+    func testTwoMessages(contextTakeover: ContextTakeover = .both) {
+        register(closeReason: .noReasonCodeSent)
+
+        let text = "RFC7692 specifies a framework for adding compression functionality to the WebSocket Protocol"
+        let textPayload = self.payload(text: text)
+
+        performServerTest(asyncTasks: { expectation in
+            self.performTest(framesToSend: [(true, self.opcodeText, textPayload), (true, self.opcodeText, textPayload)],
+                             expectedFrames: [(true, self.opcodeText, textPayload), (true, self.opcodeText, textPayload)],
+                             expectation: expectation, negotiateCompression: true, compressed: true, contextTakeover: contextTakeover)
+        })
+    }
+
+    func testTwoMessagesWithContextTakeover() {
+        testTwoMessages(contextTakeover: .both)
+    }
+
+    func testTwoMessagesWithClientContextTakeover() {
+        testTwoMessages(contextTakeover: .client)
+    }
+
+    func testTwoMessagesWithServerContextTakeover() {
+        testTwoMessages(contextTakeover: .server)
+    }
+
+    func testTwoMessagesWithNoContextTakeover() {
+        testTwoMessages(contextTakeover: .none)
     }
 }

@@ -65,7 +65,7 @@ extension KituraTest {
     }
 
     //Sometimes, we may have a non-final frame as the last frame
-    func sendFrame(final: Bool, withOpcode: Int, withMasking: Bool=true, withPayload: NSData, on channel: Channel, lastFrame: Bool = false, compressed: Bool = false) {
+    func sendFrame(final: Bool, withOpcode: Int, withMasking: Bool=true, withPayload: NSData, on channel: Channel, lastFrame: Bool = false, compressed: Bool = false, contextTakeover: ContextTakeover? = nil) {
         var buffer = channel.allocator.buffer(capacity: 8)
         var payloadLength = withPayload.length
 
@@ -76,7 +76,7 @@ extension KituraTest {
         }
 
         if compressed {
-            payloadBuffer = PermessageDeflateCompressor().deflatePayload(in: payloadBuffer, allocator: ByteBufferAllocator(), dropFourTrailingOctets: final)
+            payloadBuffer = self.compressor.deflatePayload(in: payloadBuffer, allocator: ByteBufferAllocator(), dropFourTrailingOctets: final)
             payloadLength = payloadBuffer.readableBytes
         }
 
@@ -192,11 +192,14 @@ class WebSocketClientHandler: ChannelInboundHandler {
 
     var compressed: Bool = false
 
-    init(expectedFrames: [(Bool, Int, NSData)], expectation: XCTestExpectation, compressed: Bool = false) {
+    var decompressor: PermessageDeflateDecompressor
+
+    init(expectedFrames: [(Bool, Int, NSData)], expectation: XCTestExpectation, compressed: Bool = false, decompressor: PermessageDeflateDecompressor) {
         self.numberOfFramesExpected = expectedFrames.count
         self.expectedFrames = expectedFrames
         self.expectation = expectation
         self.compressed = compressed
+        self.decompressor = decompressor
     }
 
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
@@ -225,7 +228,7 @@ class WebSocketClientHandler: ChannelInboundHandler {
                 currentFramePayload += [0, 0, 0xff, 0xff]
                 var payloadBuffer = ByteBufferAllocator().buffer(capacity: 8)
                 payloadBuffer.writeBytes(currentFramePayload)
-                let inflatedBuffer = PermessageDeflateDecompressor().inflatePayload(in: payloadBuffer, allocator: ByteBufferAllocator())
+                let inflatedBuffer = self.decompressor.inflatePayload(in: payloadBuffer, allocator: ByteBufferAllocator())
                 currentFramePayload = inflatedBuffer.getBytes(at: 0, length: inflatedBuffer.readableBytes) ?? []
             }
             let currentFramePayloadPtr = UnsafeBufferPointer(start: &currentFramePayload, count: currentFramePayload.count)

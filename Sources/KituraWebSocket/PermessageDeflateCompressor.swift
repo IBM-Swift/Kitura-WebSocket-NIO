@@ -44,6 +44,9 @@ class PermessageDeflateCompressor : ChannelOutboundHandler {
     // The zlib stream
     private var stream: z_stream = z_stream()
 
+    // Initialize the z_stream only once if context takeover is enabled
+    private var streamInitialized = false
+
     // PermessageDeflateCompressor is an outbound handler, this function gets called when a frame is written to the channel by WebSocketConnection.
     func write(context: ChannelHandlerContext, data: NIOAny, promise: EventLoopPromise<Void>?) {
         var frame = unwrapOutboundIn(data)
@@ -79,9 +82,12 @@ class PermessageDeflateCompressor : ChannelOutboundHandler {
 
     func deflatePayload(in buffer: ByteBuffer, allocator: ByteBufferAllocator, dropFourTrailingOctets: Bool = false) -> ByteBuffer {
         // Initialize the deflater as per https://www.zlib.net/zlib_how.html
-        stream.zalloc = nil 
-        stream.zfree = nil 
-        stream.opaque = nil 
+        if noContextTakeOver || streamInitialized == false {
+            stream.zalloc = nil
+            stream.zfree = nil
+            stream.opaque = nil
+            self.streamInitialized = true
+        }
 
         let rc = deflateInit2_(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, self.maxWindowBits, 8,
                      Z_DEFAULT_STRATEGY, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
@@ -89,7 +95,9 @@ class PermessageDeflateCompressor : ChannelOutboundHandler {
 
         defer {
             // Deinitialize the deflater before returning
-            deflateEnd(&stream)
+            if noContextTakeOver {
+                deflateEnd(&stream)
+            }
         }
 
         // Deflate/compress the payload

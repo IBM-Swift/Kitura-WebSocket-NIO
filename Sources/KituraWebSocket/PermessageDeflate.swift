@@ -26,9 +26,8 @@ class PermessageDeflate: WebSocketProtocolExtension {
         guard header.hasPrefix("permessage-deflate") else { return [] }
         var deflaterMaxWindowBits: Int32 = 15
         var inflaterMaxWindowBits: Int32 = 15
-        //TODO: change these defaults to false after implementing context takeover
-        var clientNoContextTakeover = true
-        var serverNoContextTakeover = true
+        var clientNoContextTakeover = false
+        var serverNoContextTakeover = false
 
         // Four parameters to handle:
         // * server_max_window_bits: the LZ77 sliding window size used by the server for compression
@@ -66,7 +65,6 @@ class PermessageDeflate: WebSocketProtocolExtension {
                 serverNoContextTakeover = true
             }
         }
-
         return [PermessageDeflateCompressor(maxWindowBits: deflaterMaxWindowBits, noContextTakeOver: serverNoContextTakeover),
                    PermessageDeflateDecompressor(maxWindowBits: inflaterMaxWindowBits, noContextTakeOver: clientNoContextTakeover)]
     }
@@ -81,16 +79,13 @@ class PermessageDeflate: WebSocketProtocolExtension {
 
         for parameter in header.components(separatedBy: "; ") {
             if parameter == "client_no_context_takeover" {
-                //TODO: include client_no_context_takeover in the response
+                response.append("; client_no_context_takeover")
             }
 
             if parameter == "server_no_context_takeover" {
-                //TODO: include server_no_context_takeover in the response
+                response.append("; server_no_context_takeover")
             }
         }
-        //TODO: remove this after we have implemented context takeover
-        response.append("; server_no_context_takeover")
-        response.append("; client_no_context_takeover")
         return response
     }
 }

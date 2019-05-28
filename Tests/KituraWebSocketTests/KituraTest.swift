@@ -27,6 +27,30 @@ import Foundation
 import Dispatch
 import LoggerAPI
 
+enum ContextTakeover {
+    case none
+    case client
+    case server
+    case both
+
+    func header() -> String {
+        switch self {
+        case .none: return "client_no_context_takeover; server_no_context_takeover"
+        case .client: return "server_no_context_takeover"
+        case .server: return "client_no_context_takeover"
+        case .both: return ""
+        }
+    }
+
+    var clientNoContextTakeover: Bool {
+        return self != .client && self != .both
+    }
+
+    var serverNoContextTakeover: Bool {
+        return self != .server || self != .both
+    }
+}
+
 class KituraTest: XCTestCase {
 
     private static let initOnce: () = {
@@ -46,11 +70,13 @@ class KituraTest: XCTestCase {
     let servicePathNoSlash = "wstester"
     let servicePath = "/wstester"
 
-    var  httpRequestEncoder: HTTPRequestEncoder?
+    var httpRequestEncoder: HTTPRequestEncoder?
 
     var httpResponseDecoder: ByteToMessageHandler<HTTPResponseDecoder>?
 
     var httpHandler: HTTPResponseHandler?
+
+    var compressor: PermessageDeflateCompressor = PermessageDeflateCompressor()
 
     func performServerTest(line: Int = #line, asyncTasks: (XCTestExpectation) -> Void...) {
         let server = HTTP.createServer()
@@ -79,23 +105,25 @@ class KituraTest: XCTestCase {
 
     func performTest(onPath: String? = nil, framesToSend: [(Bool, Int, NSData)], masked: [Bool] = [],
                      expectedFrames: [(Bool, Int, NSData)], expectation: XCTestExpectation,
-                     negotiateCompression: Bool = false, compressed: Bool = false) {
+                     negotiateCompression: Bool = false, compressed: Bool = false, contextTakeover: ContextTakeover? = nil) {
         precondition(masked.count == 0 || framesToSend.count == masked.count)
         let upgraded = DispatchSemaphore(value: 0)
-        guard let channel = sendUpgradeRequest(toPath: onPath ?? servicePath, usingKey: secWebKey, semaphore: upgraded, negotiateCompression: negotiateCompression) else { return }
+        self.compressor = PermessageDeflateCompressor(noContextTakeOver: contextTakeover?.clientNoContextTakeover ?? false)
+        let decompressor = PermessageDeflateDecompressor(noContextTakeOver: contextTakeover?.serverNoContextTakeover ?? false)
+        guard let channel = sendUpgradeRequest(toPath: onPath ?? servicePath, usingKey: secWebKey, semaphore: upgraded, negotiateCompression: negotiateCompression, contextTakeover: contextTakeover) else { return }
         upgraded.wait()
         do {
             _ = try channel.pipeline.removeHandler(httpRequestEncoder!).wait()
             _ = try channel.pipeline.removeHandler(httpResponseDecoder!).wait()
             _ = try channel.pipeline.removeHandler(httpHandler!).wait()
-            try channel.pipeline.addHandler(WebSocketClientHandler(expectedFrames: expectedFrames, expectation: expectation, compressed: negotiateCompression), position: .first).wait()
+            try channel.pipeline.addHandler(WebSocketClientHandler(expectedFrames: expectedFrames, expectation: expectation, compressed: negotiateCompression, decompressor: decompressor), position: .first).wait()
         } catch let error {
            Log.error("Error: \(error)")
         }
         for idx in 0..<framesToSend.count {
             let masked = masked.count == 0 ? true : masked[idx]
             let (finalToSend, opCodeToSend, payloadToSend) = framesToSend[idx]
-            self.sendFrame(final: finalToSend, withOpcode: opCodeToSend, withMasking: masked, withPayload: payloadToSend, on: channel, lastFrame: idx == framesToSend.count-1, compressed: compressed)
+            self.sendFrame(final: finalToSend, withOpcode: opCodeToSend, withMasking: masked, withPayload: payloadToSend, on: channel, lastFrame: idx == framesToSend.count-1, compressed: compressed, contextTakeover: contextTakeover)
         }
     }
 
@@ -112,7 +140,7 @@ class KituraTest: XCTestCase {
         }
     }
 
-    func sendUpgradeRequest(forProtocolVersion: String? = "13", toPath: String, usingKey: String?, semaphore: DispatchSemaphore, errorMessage: String? = nil, negotiateCompression: Bool = false) -> Channel? {
+    func sendUpgradeRequest(forProtocolVersion: String? = "13", toPath: String, usingKey: String?, semaphore: DispatchSemaphore, errorMessage: String? = nil, negotiateCompression: Bool = false, contextTakeover: ContextTakeover? = nil ) -> Channel? {
         self.httpHandler = HTTPResponseHandler(key: usingKey ?? "", semaphore: semaphore, errorMessage: errorMessage)
         let clientBootstrap = ClientBootstrap(group: MultiThreadedEventLoopGroup(numberOfThreads: 1))
             .channelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEPORT), value: 1)
@@ -132,7 +160,11 @@ class KituraTest: XCTestCase {
                 headers.add(name: "Sec-WebSocket-Key", value: key)
             }
             if negotiateCompression {
-                headers.add(name: "Sec-WebSocket-Extensions", value: "permessage-deflate")
+                var value = "permessage-deflate"
+                if let contextTakeover = contextTakeover {
+                   value.append("; \(contextTakeover.header())")
+                }
+                headers.add(name: "Sec-WebSocket-Extensions", value: value)
             }
             request.headers = headers
             channel.write(NIOAny(HTTPClientRequestPart.head(request)), promise: nil)
