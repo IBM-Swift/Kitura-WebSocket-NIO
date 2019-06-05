@@ -26,8 +26,27 @@ import NIOWebSocket
 import Foundation
 import Dispatch
 import LoggerAPI
+import NIOSSL
+import SSLService
 
 class KituraTest: XCTestCase {
+
+    // SSL Configuration for WSS tests
+    static let sslConfig: SSLService.Configuration = {
+        let sslConfigDir = URL(fileURLWithPath: #file).appendingPathComponent("../SSLConfig")
+
+        #if os(Linux)
+            let certificatePath = sslConfigDir.appendingPathComponent("certificate.pem").standardized.path
+            let keyPath = sslConfigDir.appendingPathComponent("key.pem").standardized.path
+            return SSLService.Configuration(withCACertificateDirectory: nil, usingCertificateFile: certificatePath,
+                                            withKeyFile: keyPath, usingSelfSignedCerts: true, cipherSuite: nil)
+
+        #else
+            let chainFilePath = sslConfigDir.appendingPathComponent("certificateChain.pfx").standardized.path
+            return SSLService.Configuration(withChainFilePath: chainFilePath, withPassword: "kitura",
+                                            usingSelfSignedCerts: true, cipherSuite: nil)
+        #endif
+    }()
 
     private static let initOnce: () = {
         PrintLogger.use(colored: true)
@@ -52,9 +71,16 @@ class KituraTest: XCTestCase {
 
     var httpHandler: HTTPResponseHandler?
 
-    func performServerTest(line: Int = #line, asyncTasks: (XCTestExpectation) -> Void...) {
+    var isSecure: Bool = true
+
+    func performServerTest(line: Int = #line, isSecure: Bool = true, asyncTasks: (XCTestExpectation) -> Void...) {
+        self.isSecure = isSecure
         let server = HTTP.createServer()
         server.allowPortReuse = true
+        if isSecure {
+            server.sslConfig = KituraTest.sslConfig
+        }
+
         do {
             try server.listen(on: 8080)
 
@@ -107,9 +133,23 @@ class KituraTest: XCTestCase {
     func clientChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
         self.httpRequestEncoder = HTTPRequestEncoder()
         self.httpResponseDecoder =  ByteToMessageHandler(HTTPResponseDecoder(leftOverBytesStrategy: .dropBytes))
-        return channel.pipeline.addHandlers(self.httpRequestEncoder!, self.httpResponseDecoder!, position: .last).flatMap {
+        let httpHandlersAddedFuture = channel.pipeline.addHandlers(self.httpRequestEncoder!, self.httpResponseDecoder!, position: .last).flatMap {
             channel.pipeline.addHandler(self.httpHandler!)
         }
+
+        if self.isSecure {
+            do {
+                let sslConfig = TLSConfiguration.forClient(certificateVerification: .none)
+                let sslContext = try NIOSSLContext(configuration: sslConfig)
+                let sslHandler = try NIOSSLClientHandler(context: sslContext, serverHostname: nil)
+                return httpHandlersAddedFuture.flatMap {
+                    channel.pipeline.addHandler(sslHandler, position: .first)
+                }
+            } catch let error {
+                Log.error("Failed to create client SSLContext. Error: \(error)")
+            }
+        }
+        return httpHandlersAddedFuture
     }
 
     func sendUpgradeRequest(forProtocolVersion: String? = "13", toPath: String, usingKey: String?, semaphore: DispatchSemaphore, errorMessage: String? = nil, negotiateCompression: Bool = false) -> Channel? {
