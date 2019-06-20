@@ -89,7 +89,8 @@ class PermessageDeflateCompressor : ChannelOutboundHandler {
             self.streamInitialized = true
         }
 
-        let rc = deflateInit2_(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, self.maxWindowBits, 8,
+        // The zlib manual asks us to provide a negative windowBits value for raw deflate
+        let rc = deflateInit2_(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -self.maxWindowBits, 8,
                      Z_DEFAULT_STRATEGY, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
         precondition(rc == Z_OK, "Unexpected return from zlib init: \(rc)")
 
@@ -121,10 +122,6 @@ class PermessageDeflateCompressor : ChannelOutboundHandler {
         // Make sure all of inputBuffer was read, and outputBuffer isn't empty
         precondition(inputBuffer.readableBytes == 0)
         precondition(outputBuffer.readableBytes > 0)
-
-        // Remove the 0x78 0x9C zlib header added by zlib
-        _ = outputBuffer.readBytes(length: 2)
-        outputBuffer.discardReadBytes()
 
         // Ignore the 0, 0, 0xff, 0xff trailer added by zlib
         if dropFourTrailingOctets {
