@@ -35,25 +35,35 @@ class PermessageDeflate: WebSocketProtocolExtension {
         // * server_no_context_takeover: prevent the server from using context-takeover
         // * client_no_context_takeover: prevent the client from using context-takeover
         for parameter in header.components(separatedBy: "; ") {
-            // If we receieved a valid value for server_max_window_bits, configure the deflater to use it
+            // If we receieved a valid value for server_max_window_bits, use it to configure the deflater
             if parameter.hasPrefix("server_max_window_bits") {
                 let maxWindowBits = parameter.components(separatedBy: "=")
                 guard maxWindowBits.count == 2 else { continue }
-                if let mwBits = Int32(maxWindowBits[1]) {
-                    if mwBits >= 8 && mwBits <= 15 {
-                        deflaterMaxWindowBits = mwBits
-                    }
+                guard let mwBits = Int32(maxWindowBits[1]) else { continue }
+                if mwBits >= 8 && mwBits <= 15 {
+                    // We received a valid value. However there's a special case here:
+                    //
+                    // There's an open zlib issue which does not set the window size
+                    // to 256 (windowBits=8). For windowBits=8, zlib silently changes the
+                    // value to 9. However, this apparent hack works only with zlib streams.
+                    // WebSockets use raw deflate streams. For raw deflate streams, zlib has been
+                    // patched to ignore the windowBits value 8.
+                    // More details here: https://github.com/madler/zlib/issues/171
+                    //
+                    // So, if the server requested for server_max_window_bits=8, we are
+                    // going to use server_max_window_bits=9 instead and notify this in
+                    // our negotiation response too.
+                    deflaterMaxWindowBits = mwBits == 8 ? 9 : mwBits
                 }
             }
 
-            // If we receieved a valid value for server_max_window_bits, configure the inflater to use it
+            // If we received a valid client_max_window_bits value, use it to configure the inflater
             if parameter.hasPrefix("client_max_window_bits") {
                 let maxWindowBits = parameter.components(separatedBy: "=")
                 guard maxWindowBits.count == 2 else { continue }
-                if let mwBits = Int32(maxWindowBits[1]) {
-                    if mwBits >= 8 && mwBits <= 15  {
-                        inflaterMaxWindowBits = mwBits
-                    }
+                guard let mwBits = Int32(maxWindowBits[1]) else { continue }
+                if mwBits >= 8 && mwBits <= 15  {
+                    inflaterMaxWindowBits = mwBits
                 }
             }
 
@@ -84,6 +94,37 @@ class PermessageDeflate: WebSocketProtocolExtension {
 
             if parameter == "server_no_context_takeover" {
                 response.append("; server_no_context_takeover")
+            }
+
+            // If we receive a valid value for server_max_window_bits, we accept it and return if
+            // in the response. If we receive an invalid value, we default to 15 and return the
+            // same in the response. If we receive no value, we ignore this header.
+            if parameter.hasPrefix("server_max_window_bits") {
+                let maxWindowBits = parameter.components(separatedBy: "=")
+                guard maxWindowBits.count == 2 else { continue }
+                guard let mwBits = Int32(maxWindowBits[1]) else { continue }
+                if mwBits >= 8 && mwBits <= 15 {
+                    // We received a valid value. However there's a special case here:
+                    //
+                    // There's an open zlib issue which does not set the window size
+                    // to 256 (windowBits=8). For windowBits=8, zlib silently changes the
+                    // value to 9. However, this apparent hack works only with zlib streams.
+                    // WebSockets use raw deflate streams. For raw deflate streams, zlib has been
+                    // patched to ignore the windowBits value 8.
+                    // More details here: https://github.com/madler/zlib/issues/171
+                    //
+                    // So, if the server requested for server_max_window_bits=8, we are
+                    // going to use server_max_window_bits=9 instead and notify this in
+                    // our negotiation response too.
+                    if mwBits == 8 {
+                        response.append("; server_max_window_bits=9")
+                    } else {
+                        response.append("; \(parameter)")
+                    }
+                } else {
+                    // we received an invalid value
+                    response.append("; server_max_window_bits=15")
+                }
             }
         }
         return response
