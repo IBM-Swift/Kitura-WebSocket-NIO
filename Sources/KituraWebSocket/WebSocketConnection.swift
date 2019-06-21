@@ -335,10 +335,10 @@ extension WebSocketConnection {
          let frame = WebSocketFrame(fin: true, opcode: .connectionClose, data: data)
          let promise = context.eventLoop.makePromise(of: Void.self)
          context.writeAndFlush(self.wrapOutboundOut(frame), promise: promise)
-         promise.futureResult.whenComplete { _ in
-             if hard {
-                 _ = context.close(mode: .output)
-             }
+         if hard {
+            promise.futureResult.flatMap { _ in
+                context.close(mode: .output)
+            }.whenComplete { _ in }
          }
          awaitClose = true
     }

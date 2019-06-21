@@ -47,7 +47,7 @@ enum ContextTakeover {
     }
 
     var serverNoContextTakeover: Bool {
-        return self != .server || self != .both
+        return self != .server && self != .both
     }
 }
 

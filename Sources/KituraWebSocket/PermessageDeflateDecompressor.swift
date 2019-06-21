@@ -58,6 +58,12 @@ class PermessageDeflateDecompressor : ChannelInboundHandler {
         let frame = unwrapInboundIn(data)
         // We should either have a data frame with rsv1 set, or a continuation frame of a compressed message. There's nothing to do otherwise.
         guard frame.isCompressedDataFrame || (frame.isContinuationFrame && self.receivingCompressedMessage) else {
+            // If we are using context takeover, this is a good time to free the zstream!
+            if streamInitialized && frame.opcode == .connectionClose && !noContextTakeOver {
+                deflateEnd(&stream)
+                streamInitialized = false
+            }
+
             context.fireChannelRead(self.wrapInboundOut(frame))
             return
         }
