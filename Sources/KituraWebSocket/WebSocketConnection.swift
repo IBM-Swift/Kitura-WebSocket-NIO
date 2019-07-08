@@ -37,8 +37,6 @@ public class WebSocketConnection {
 
     var awaitClose = false
 
-    var active = true
-
     var message: ByteBuffer?
 
     weak var context: ChannelHandlerContext?
@@ -58,7 +56,6 @@ public class WebSocketConnection {
     }
 
     public func ping(withMessage: String? = nil) {
-        guard active else { return }
         guard let context = context else {
             return
         }
@@ -75,7 +72,6 @@ public class WebSocketConnection {
     }
 
     public func send(message: Data, asBinary: Bool = true) {
-        guard active else { return }
         guard let context = context else {
             return
         }
@@ -87,7 +83,6 @@ public class WebSocketConnection {
     }
 
     public func send(message: String) {
-        guard active else { return }
         guard let context = context else {
             return
         }
@@ -198,7 +193,7 @@ extension WebSocketConnection: ChannelInboundHandler {
             }
 
         case .connectionClose:
-            if active {
+            if context != nil {
                 let reasonCode: WebSocketErrorCode
                 var description: String?
                 if frame.length >= 2 && frame.length < 126 {
