@@ -60,7 +60,6 @@ public class WebSocketConnection {
     public func ping(withMessage: String? = nil) {
         guard active else { return }
         guard let context = context else {
-            Log.error("ChannelHandlerContext unavailable")
             return
         }
         context.eventLoop.execute {
@@ -78,7 +77,6 @@ public class WebSocketConnection {
     public func send(message: Data, asBinary: Bool = true) {
         guard active else { return }
         guard let context = context else {
-            Log.error("ChannelHandlerContext unavailable")
             return
         }
         context.eventLoop.execute {
@@ -91,7 +89,6 @@ public class WebSocketConnection {
     public func send(message: String) {
         guard active else { return }
         guard let context = context else {
-            Log.error("ChannelHandlerContext unavailable")
             return
         }
         context.eventLoop.execute {
@@ -291,7 +288,6 @@ extension WebSocketConnection {
 
     func connectionClosed(reason: WebSocketErrorCode, description: String? = nil, reasonToSendBack: WebSocketErrorCode? = nil) {
         guard let context = context else {
-             Log.error("ChannelHandlerContext unavailable")
              return
         }
         if context.channel.isWritable {
@@ -304,7 +300,6 @@ extension WebSocketConnection {
 
     func sendMessage(with opcode: WebSocketOpcode, data: ByteBuffer) {
         guard let context = context else {
-            Log.error("ChannelHandlerContext unavailable")
             return
         }
         guard context.channel.isWritable else {
@@ -323,7 +318,6 @@ extension WebSocketConnection {
 
     func closeConnection(reason: WebSocketErrorCode?, description: String?, hard: Bool) {
          guard let context = context else {
-             Log.error("ChannelHandlerContext unavailable")
              return
          }
          var data = context.channel.allocator.buffer(capacity: 2)
