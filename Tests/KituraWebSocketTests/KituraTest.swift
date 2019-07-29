@@ -246,6 +246,5 @@ extension Bool {
     }
 }
 
-// We'd want to able to remove HTTPRequestEncoder and HTTPResponseHandler by hand, following a successful upgrade to WebSocket
-extension HTTPRequestEncoder: RemovableChannelHandler { }
+// We'd want to able to remove HTTPResponseHandler by hand, following a successful upgrade to WebSocket
 extension HTTPResponseHandler: RemovableChannelHandler { }

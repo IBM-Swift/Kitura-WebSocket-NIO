@@ -193,7 +193,7 @@ extension WebSocketConnection: ChannelInboundHandler {
             }
 
         case .connectionClose:
-            if context != nil {
+            if self.context != nil {
                 let reasonCode: WebSocketErrorCode
                 var description: String?
                 if frame.length >= 2 && frame.length < 126 {
