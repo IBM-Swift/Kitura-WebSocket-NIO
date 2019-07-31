@@ -15,7 +15,6 @@
  **/
 
 import XCTest
-
 import LoggerAPI
 @testable import KituraWebSocket
 import KituraNet
@@ -25,31 +24,6 @@ import NIOHTTP1
 import NIOWebSocket
 import Foundation
 import Dispatch
-import LoggerAPI
-
-enum ContextTakeover {
-    case none
-    case client
-    case server
-    case both
-
-    func header() -> String {
-        switch self {
-        case .none: return "client_no_context_takeover; server_no_context_takeover"
-        case .client: return "server_no_context_takeover"
-        case .server: return "client_no_context_takeover"
-        case .both: return ""
-        }
-    }
-
-    var clientNoContextTakeover: Bool {
-        return self != .client && self != .both
-    }
-
-    var serverNoContextTakeover: Bool {
-        return self != .server && self != .both
-    }
-}
 
 class KituraTest: XCTestCase {
 
@@ -101,35 +75,6 @@ class KituraTest: XCTestCase {
         } catch {
             XCTFail("Test failed. Error=\(error)")
         }
-    }
-
-    func performTest(onPath: String? = nil, framesToSend: [(Bool, Int, NSData)], masked: [Bool] = [],
-                     expectedFrames: [(Bool, Int, NSData)], expectation: XCTestExpectation,
-                     negotiateCompression: Bool = false, compressed: Bool = false, contextTakeover: ContextTakeover? = nil, sleepTime: Int = 0) {
-        precondition(masked.count == 0 || framesToSend.count == masked.count)
-        let upgraded = DispatchSemaphore(value: 0)
-        self.compressor = PermessageDeflateCompressor(noContextTakeOver: contextTakeover?.clientNoContextTakeover ?? false)
-        let decompressor = PermessageDeflateDecompressor(noContextTakeOver: contextTakeover?.serverNoContextTakeover ?? false)
-        guard let channel = sendUpgradeRequest(toPath: onPath ?? servicePath, usingKey: secWebKey, semaphore: upgraded, negotiateCompression: negotiateCompression, contextTakeover: contextTakeover) else { return }
-        upgraded.wait()
-        do {
-            _ = try channel.pipeline.removeHandler(httpRequestEncoder!).wait()
-            _ = try channel.pipeline.removeHandler(httpResponseDecoder!).wait()
-            _ = try channel.pipeline.removeHandler(httpHandler!).wait()
-            try channel.pipeline.addHandler(WebSocketClientHandler(expectedFrames: expectedFrames, expectation: expectation, compressed: negotiateCompression, decompressor: decompressor), position: .first).wait()
-        } catch let error {
-           Log.error("Error: \(error)")
-        }
-        for idx in 0..<framesToSend.count {
-            let masked = masked.count == 0 ? true : masked[idx]
-            let (finalToSend, opCodeToSend, payloadToSend) = framesToSend[idx]
-            self.sendFrame(final: finalToSend, withOpcode: opCodeToSend, withMasking: masked, withPayload: payloadToSend, on: channel, lastFrame: idx == framesToSend.count-1, compressed: compressed, contextTakeover: contextTakeover)
-        }
-    }
-
-    func register(onPath: String? = nil, closeReason: WebSocketCloseReasonCode, testServerRequest: Bool = false, pingMessage: String? = nil, testQueryParams: Bool = false, connectionTimeout: Int? = nil) {
-        let service = TestWebSocketService(closeReason: closeReason, testServerRequest: testServerRequest, pingMessage: pingMessage, testQueryParams: testQueryParams, connectionTimeout: connectionTimeout)
-        WebSocket.register(service: service, onPath: onPath ?? servicePath)
     }
 
     func clientChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
@@ -198,6 +143,11 @@ class KituraTest: XCTestCase {
 
     func expectation(line: Int, index: Int) -> XCTestExpectation {
         return self.expectation(description: "\(type(of: self)):\(line)[\(index)]")
+    }
+
+    func register(onPath: String? = nil, closeReason: WebSocketCloseReasonCode, testServerRequest: Bool = false, pingMessage: String? = nil, testQueryParams: Bool = false, connectionTimeout: Int? = nil) {
+        let service = TestWebSocketService(closeReason: closeReason, testServerRequest: testServerRequest, pingMessage: pingMessage, testQueryParams: testQueryParams, connectionTimeout: connectionTimeout)
+        WebSocket.register(service: service, onPath: onPath ?? servicePath)
     }
 }
 

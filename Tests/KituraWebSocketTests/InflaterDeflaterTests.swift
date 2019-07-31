@@ -26,7 +26,7 @@ class InflaterDeflaterTests: KituraTest {
     static var allTests: [(String, (InflaterDeflaterTests) -> () throws -> Void)] {
         return [
             ("testDeflateAndInflateWithString", testDeflateAndInflateWithString),
-            ("testDeflateAndInflateWithBytes", testDeflateAndInflateWithBytes),
+            ("testDeflateAndInflateWithBytes", testDeflateAndInflateWithBytes)
         ]
     }
 
@@ -64,7 +64,6 @@ class InflaterDeflaterTests: KituraTest {
          XCTAssertEqual(buffer, inflatedBuffer)
     }
 
-
     func testWithString(_ input: String) {
         var buffer = ByteBufferAllocator().buffer(capacity: 1)
         buffer.writeString(input)
@@ -77,9 +76,7 @@ class InflaterDeflaterTests: KituraTest {
         let inflater = PermessageDeflateDecompressor()
         var inflatedBuffer = inflater.inflatePayload(in: deflatedBuffer, allocator: ByteBufferAllocator())
         let output = inflatedBuffer.readString(length: inflatedBuffer.readableBytes)
- 
         //test   
         XCTAssertEqual(output, input)
     }
-         
 }

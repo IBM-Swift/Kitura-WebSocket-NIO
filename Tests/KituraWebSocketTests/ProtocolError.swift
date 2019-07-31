@@ -16,7 +16,8 @@
 
 import XCTest
 import Foundation
-
+import NIOWebSocket
+import NIO
 import LoggerAPI
 @testable import KituraWebSocket
 
@@ -42,227 +43,200 @@ class ProtocolErrorTests: KituraTest {
 
     func testBinaryAndTextFrames() {
         register(closeReason: .protocolError)
-
         performServerTest { expectation in
+            let bytes:[UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
+            let textPayload = "testing 1 2 3"
 
-            var bytes = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
-
-            let binaryPayload = NSMutableData(bytes: &bytes, length: bytes.count)
-
-            let textPayload = self.payload(text: "testing 1 2 3")
-
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "A text frame must be the first in the message")
-            expectedPayload.append(part.bytes, length: part.length)
-
-            self.performTest(framesToSend: [(false, self.opcodeBinary, binaryPayload),
-                                            (true, self.opcodeText, textPayload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester",requestKey: "test")
+            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: false)
+            _client?.sendMessage(raw: textPayload, opcode: .text, finalFrame: true, compressed: false)
+            _client?.onClose {channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                expectedPayload.writeString("A text frame must be the first in the message")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testPingWithOversizedPayload() {
         register(closeReason: .protocolError)
-
-        let expectedPayload = NSMutableData()
-        var part = self.payload(closeReasonCode: .protocolError)
-        expectedPayload.append(part.bytes, length: part.length)
-        part = self.payload(text: "Control frames are only allowed to have payload up to and including 125 octets")
-        expectedPayload.append(part.bytes, length: part.length)
-
         performServerTest { expectation in
-            let oversizedPayload = NSMutableData()
-            oversizedPayload.append(Data(repeatElement(0, count: 126)))
-            self.performTest(framesToSend: [(true, self.opcodePing, oversizedPayload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            let oversizedPayload = [UInt8](repeating: 0x00, count: 126)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(raw: oversizedPayload, opcode: .ping, finalFrame: true, compressed: false)
+            _client?.onClose {channel, data  in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                expectedPayload.writeString("Control frames are only allowed to have payload up to and including 125 octets")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testFragmentedPing() {
         register(closeReason: .protocolError)
-
         performServerTest { expectation in
-
             let text = "Testing, testing 1, 2, 3. "
-
-            let textPayload = self.payload(text: text)
-
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "Control frames must not be fragmented")
-            expectedPayload.append(part.bytes, length: part.length)
-
-            let pingPayload = self.payload(text: "Testing, testing 1,2,3")
-
-            self.performTest(framesToSend: [(false, self.opcodePing, pingPayload),
-                                            (false, self.opcodeContinuation, textPayload),
-                                            (true, self.opcodeContinuation, textPayload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(raw: text, opcode: .ping, finalFrame: false, compressed: false)
+            _client?.sendMessage(raw: text, opcode: .continuation, finalFrame: false, compressed: false)
+            _client?.sendMessage(raw: text, opcode: .continuation, finalFrame: true, compressed: false)
+            _client?.onClose {channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                expectedPayload.writeString("Control frames must not be fragmented")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testInvalidOpCode() {
         register(closeReason: .protocolError)
-
         performServerTest { expectation in
-
-            var bytes = [0x00, 0x01]
-            let payload = NSMutableData(bytes: &bytes, length: bytes.count)
-
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "Parsed a frame with an invalid operation code of 15")
-            expectedPayload.append(part.bytes, length: part.length)
-
-            self.performTest(framesToSend: [(true, 15, payload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(raw: [0x00, 0x01], opcode: WebSocketOpcode(encodedWebSocketOpcode: 15)!, finalFrame: true)
+            _client?.onClose { channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                expectedPayload.writeString("Parsed a frame with an invalid operation code of 15")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testInvalidUserCloseCode() {
         register(closeReason: .protocolError)
-
         performServerTest { expectation in
-
-            let closePayload = self.payload(closeReasonCode: .userDefined(2999))
-            let returnPayload = self.payload(closeReasonCode: .protocolError)
-            self.performTest(framesToSend: [(true, self.opcodeClose, closePayload)],
-                             expectedFrames: [(true, self.opcodeClose, returnPayload)],
-                             expectation: expectation)
+            var closePayload = ByteBufferAllocator().buffer(capacity: 8)
+                closePayload.writeInteger(WebSocketCloseReasonCode.userDefined(2999).code())
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(data: closePayload, opcode: .connectionClose, finalFrame: true)
+            _client?.onClose {channel, frame in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                XCTAssertEqual(frame, expectedPayload, "The payload \(frame) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testCloseWithOversizedPayload() {
         register(closeReason: .protocolError)
-
-        let expectedPayload = NSMutableData()
-        var part = self.payload(closeReasonCode: .protocolError)
-        expectedPayload.append(part.bytes, length: part.length)
-        part = self.payload(text: "Control frames are only allowed to have payload up to and including 125 octets")
-        expectedPayload.append(part.bytes, length: part.length)
-
         performServerTest { expectation in
-            let oversizedPayload = NSMutableData()
-            oversizedPayload.append(Data(repeatElement(0, count: 126)))
-            self.performTest(framesToSend: [(true, self.opcodeClose, oversizedPayload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            let oversizedPayload = [UInt8](repeating: 0x00, count: 126)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(raw: oversizedPayload, opcode: .connectionClose, finalFrame: true)
+            _client?.onClose {channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                expectedPayload.writeString("Control frames are only allowed to have payload up to and including 125 octets")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testJustContinuationFrame() {
         register(closeReason: .protocolError)
-
         performServerTest { expectation in
-
-            var bytes = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
-
-            let payload = NSMutableData(bytes: &bytes, length: bytes.count)
-
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "Continuation sent with prior binary or text frame")
-            expectedPayload.append(part.bytes, length: part.length)
-
-            self.performTest(framesToSend: [(false, self.opcodeContinuation, payload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            let bytes:[UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
+            _client?.onClose {channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                expectedPayload.writeString("Continuation sent with prior binary or text frame")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testJustFinalContinuationFrame() {
         register(closeReason: .protocolError)
-
         performServerTest { expectation in
-
-            var bytes = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
-
-            let payload = NSMutableData(bytes: &bytes, length: bytes.count)
-
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "Continuation sent with prior binary or text frame")
-            expectedPayload.append(part.bytes, length: part.length)
-
-            self.performTest(framesToSend: [(true, self.opcodeContinuation, payload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            let bytes:[UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
+            _client?.onClose {channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                expectedPayload.writeString("Continuation sent with prior binary or text frame")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testInvalidUTF() {
         register(closeReason: .noReasonCodeSent)
-
         performServerTest { expectation in
             let testString = "Testing, 1,2,3"
-            let dataPayload = testString.data(using: String.Encoding.utf16)!
-            let payload = NSMutableData()
-            payload.append(dataPayload)
-
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .invalidDataContents)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "Failed to convert received payload to UTF-8 String")
-            expectedPayload.append(part.bytes, length: part.length)
-
-            self.performTest(framesToSend: [(true, self.opcodeText, payload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            var payload = ByteBufferAllocator().buffer(capacity: 8)
+            payload.writeInteger(WebSocketCloseReasonCode.normal.code())
+            payload.writeBytes(testString.data(using: .utf16)!)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(data: payload, opcode: .text, finalFrame: true)
+            _client?.onClose {channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.invalidDataContents.code())
+                expectedPayload.writeString("Failed to convert received payload to UTF-8 String")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testInvalidUTFCloseMessage() {
         register(closeReason: .noReasonCodeSent)
-
         performServerTest { expectation in
             let testString = "Testing, 1,2,3"
-            let dataPayload = testString.data(using: String.Encoding.utf16)!
-            let payload = NSMutableData()
-            let closeReasonCode = self.payload(closeReasonCode: .normal)
-            payload.append(closeReasonCode.bytes, length: closeReasonCode.length)
-            payload.append(dataPayload)
-
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .invalidDataContents)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "Failed to convert received close message to UTF-8 String")
-            expectedPayload.append(part.bytes, length: part.length)
-
-            self.performTest(framesToSend: [(true, self.opcodeClose, payload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            var payload = ByteBufferAllocator().buffer(capacity: 8)
+            payload.writeInteger(WebSocketCloseReasonCode.normal.code())
+            payload.writeBytes(testString.data(using: String.Encoding.utf16)!)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(data: payload, opcode: .connectionClose, finalFrame: true)
+            _client?.onClose { channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.invalidDataContents.code())
+                expectedPayload.writeString("Failed to convert received close message to UTF-8 String")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testTextAndBinaryFrames() {
         register(closeReason: .protocolError)
-
         performServerTest { expectation in
-
-            let textPayload = self.payload(text: "testing 1 2 3")
-            var bytes = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
-            let binaryPayload = NSMutableData(bytes: &bytes, length: bytes.count)
-
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "A binary frame must be the first in the message")
-            expectedPayload.append(part.bytes, length: part.length)
-
-            self.performTest(framesToSend: [(false, self.opcodeText, textPayload),
-                                            (true, self.opcodeBinary, binaryPayload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            let textPayload = "testing 1 2 3"
+            let bytes:[UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(raw: textPayload, opcode: .text, finalFrame: false)
+            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: true)
+            _client?.onClose {channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                expectedPayload.writeString("A binary frame must be the first in the message")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
@@ -270,63 +244,33 @@ class ProtocolErrorTests: KituraTest {
         register(closeReason: .protocolError)
 
         performServerTest { expectation in
-
-            var bytes = [0x00, 0x01]
-            let payload = NSMutableData(bytes: &bytes, length: bytes.count)
-
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "Received a frame from a client that wasn't masked")
-            expectedPayload.append(part.bytes, length: part.length)
-            self.performTest(framesToSend: [(true, self.opcodeBinary, payload)], masked: [false],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.maskFrame = false
+            _client?.sendMessage(raw: [0x00, 0x01], opcode: .binary, finalFrame: true)
+            _client?.onClose { channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                expectedPayload.writeString("Received a frame from a client that wasn't masked")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
-    
+
     func testInvalidRSVCode() {
         register(closeReason: .protocolError)
-        
-        var bytes = [0x00, 0x01]
-        let payload = NSMutableData(bytes: &bytes, length: bytes.count)
-
         performServerTest (asyncTasks: { expectation in
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "RSV3 must be 0 unless negotiated to define meaning for non-zero values")
-            expectedPayload.append(part.bytes, length: part.length)
-            // 25 becomes 0011001 which is a ping (op code 9) and rsv3 = 1
-            self.performTest(framesToSend: [(true, 25, payload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
-        }, { expectation in
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "RSV2 must be 0 unless negotiated to define meaning for non-zero values")
-            expectedPayload.append(part.bytes, length: part.length)
-            // 41 becomes 0101001 which is a ping (op code 9) and rsv2 = 1
-            self.performTest(framesToSend: [(true, 41, payload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
-        },{ expectation in
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "RSV1 must be 0 unless negotiated to define meaning for non-zero values")
-            expectedPayload.append(part.bytes, length: part.length)
-            // 74 becomes 1001001 which is a ping (op code 9) and rsv1 = 1
-            self.performTest(framesToSend: [(true, 73, payload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
-        }, { expectation in
-            // 73 becomes 1001001 which is a ping and rsv1 is set to 1, set negotiateCompression
-            // ensures compression is negotiated
-            self.performTest(framesToSend: [(true, 73, payload)],
-                             expectedFrames: [(true, self.opcodePong, payload)],
-                             expectation: expectation, negotiateCompression: true, compressed: true)
+            let _client =  WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(raw: [0x00, 0x01], opcode: .binary, finalFrame: true, compressed: true)
+            _client?.onClose { channel, data in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
+                expectedPayload.writeString("RSV1 must be 0 unless negotiated to define meaning for non-zero values")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected   \(expectedPayload)")
+                _ = channel.close()
+                expectation.fulfill()
+            }
         })
     }
 }

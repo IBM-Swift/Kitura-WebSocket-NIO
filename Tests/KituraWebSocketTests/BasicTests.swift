@@ -17,6 +17,8 @@
 import XCTest
 import Foundation
 import Dispatch
+import NIO
+import NIOWebSocket
 
 import LoggerAPI
 @testable import KituraWebSocket
@@ -47,105 +49,138 @@ class BasicTests: KituraTest {
 
     func testBinaryLongMessage() {
         register(closeReason: .noReasonCodeSent)
-
-        var bytes = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
-        let binaryPayload = NSMutableData(bytes: &bytes, length: bytes.count)
+        var bytes: [UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
         repeat {
-            binaryPayload.append(binaryPayload.bytes, length: binaryPayload.length)
-        } while binaryPayload.length < 100000
-        binaryPayload.append(&bytes, length: bytes.count)
-
-        performServerTest (asyncTasks: { expectation in
-            self.performTest(framesToSend: [(true, self.opcodeBinary, binaryPayload)],
-                             expectedFrames: [(true, self.opcodeBinary, binaryPayload)],
-                             expectation: expectation)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectedFrames: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: true)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectedFrames: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: false)
-            })
+            bytes.append(contentsOf: bytes)
+        } while bytes.count < 100000
+        var payloadBuffer = ByteBufferAllocator().buffer(capacity: 16)
+        payloadBuffer.writeBytes(bytes)
+        performServerTest(asyncTasks: { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(bytes)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(raw: bytes, compressed: true)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(bytes)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        })
     }
 
     func testBinaryMediumMessage() {
         register(closeReason: .noReasonCodeSent)
-
-
-        var bytes = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
-        let binaryPayload = NSMutableData(bytes: &bytes, length: bytes.count)
+        var bytes: [UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
         repeat {
-            binaryPayload.append(binaryPayload.bytes, length: binaryPayload.length)
-        } while binaryPayload.length < 1000
+            bytes.append(contentsOf: bytes)
+        } while bytes.count < 1000
+        var payloadBuffer = ByteBufferAllocator().buffer(capacity: 16)
+        payloadBuffer.writeBytes(bytes)
 
-        performServerTest (asyncTasks: { expectation in
-            self.performTest(framesToSend: [(true, self.opcodeBinary, binaryPayload)],
-                             expectedFrames: [(true, self.opcodeBinary, binaryPayload)],
-                             expectation: expectation)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectedFrames: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: true)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectedFrames: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: false)
-            })
+        performServerTest(asyncTasks: { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(bytes)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(raw: bytes, compressed: true)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(bytes)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        })
     }
 
     func testBinaryShortMessage() {
         register(closeReason: .noReasonCodeSent)
+        let bytes: [UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
+        var payloadBuffer = ByteBufferAllocator().buffer(capacity: 16)
+        payloadBuffer.writeBytes(bytes)
 
-        var bytes = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
-        let binaryPayload = NSMutableData(bytes: &bytes, length: bytes.count)
-
-        performServerTest (asyncTasks: { expectation in
-            self.performTest(framesToSend: [(true, self.opcodeBinary, binaryPayload)],
-                             expectedFrames: [(true, self.opcodeBinary, binaryPayload)],
-                             expectation: expectation)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectedFrames: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: true)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectedFrames: [(true, self.opcodeBinary, binaryPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: false)
-            })
+        performServerTest(asyncTasks: { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(bytes)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, {expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(raw: bytes, compressed: true)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(bytes)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        })
     }
 
     func testGracefullClose() {
         register(closeReason: .normal)
-
         performServerTest { expectation in
-            let sendPayload = self.payload(closeReasonCode: .normal)
-            self.performTest(framesToSend: [(true, self.opcodeClose, sendPayload)],
-                             expectedFrames: [(true, self.opcodeClose, sendPayload)],
-                             expectation: expectation)
+            var payloadBuffer = ByteBufferAllocator().buffer(capacity: 8)
+            payloadBuffer.writeInteger(WebSocketCloseReasonCode.normal.code())
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester",
+                                          requestKey: "test")
+            _client?.sendMessage(data: payloadBuffer, opcode: .connectionClose, finalFrame: true, compressed: false)
+            _client?.onClose { channel, _ in
+                _ = channel.close()
+                expectation.fulfill()
+            }
         }
     }
 
     func testPing() {
         register(closeReason: .noReasonCodeSent)
-
         performServerTest { expectation in
-            let pingPayload = NSData()
-            self.performTest(framesToSend: [(true, self.opcodePing, pingPayload)],
-                             expectedFrames: [(true, self.opcodePong, pingPayload)],
-                             expectation: expectation)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.ping()
+            _client?.onPong { code, _ in
+                XCTAssertEqual(code, WebSocketOpcode.pong, "Recieved opcode \(code) doesn't equal expected \(WebSocketOpcode.pong)")
+                expectation.fulfill()
+            }
         }
     }
 
     func testPingWithText() {
         register(closeReason: .noReasonCodeSent)
-
         performServerTest { expectation in
-            let pingPayload = self.payload(text: "Testing, testing 1,2,3")
-            self.performTest(framesToSend: [(true, self.opcodePing, pingPayload)],
-                             expectedFrames: [(true, self.opcodePong, pingPayload)],
-                             expectation: expectation)
+            var payloadBuffer = ByteBufferAllocator().buffer(capacity: 8)
+            payloadBuffer.writeString("Testing, testing 1,2,3")
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(data: payloadBuffer, opcode: .ping, finalFrame: true, compressed: false)
+            _client?.onPong { code, data in
+                XCTAssertEqual(code, WebSocketOpcode.pong, "Recieved opcode \(code) doesn't equal expected \(WebSocketOpcode.pong)")
+                XCTAssertEqual(data, payloadBuffer, "The payload \(data) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
         }
     }
 
@@ -154,7 +189,7 @@ class BasicTests: KituraTest {
 
         performServerTest { expectation in
             let connected = DispatchSemaphore(value: 0)
-            guard let _ = self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: connected) else { return }
+            guard self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: connected) != nil else { return }
             connected.wait()
 
             sleep(3)       // Wait a bit for the WebSocketService to test the ServerRequest
@@ -168,11 +203,11 @@ class BasicTests: KituraTest {
 
         performServerTest { expectation in
             let upgraded = DispatchSemaphore(value: 0)
-            guard let _ = self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgraded) else { return }
+            guard self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgraded) != nil else { return }
             upgraded.wait()
             WebSocket.unregister(path: self.servicePath)
             let upgradeFailed = DispatchSemaphore(value: 0)
-            guard let _ = self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgradeFailed, errorMessage: "No service has been registered for the path /wstester") else { return }
+            guard self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgradeFailed, errorMessage: "No service has been registered for the path /wstester") != nil else { return }
             upgradeFailed.wait()
             expectation.fulfill()
         }
@@ -183,14 +218,14 @@ class BasicTests: KituraTest {
         performServerTest(asyncTasks: { expectation in
             self.register(closeReason: .noReasonCodeSent)
             let upgraded = DispatchSemaphore(value: 0)
-            guard let _ = self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgraded) else { return }
+            guard self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgraded) != nil else { return }
             upgraded.wait()
             expectation.fulfill()
         }, { expectation in
             let upgraded = DispatchSemaphore(value: 0)
             WebSocket.unregister(path: self.servicePathNoSlash)
             self.register(onPath: self.servicePathNoSlash, closeReason: .noReasonCodeSent)
-            guard let _ = self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgraded) else { return }
+            guard self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgraded) != nil else { return }
             upgraded.wait()
             expectation.fulfill()
         })
@@ -198,122 +233,151 @@ class BasicTests: KituraTest {
 
     func testTextLongMessage() {
         register(closeReason: .noReasonCodeSent)
-
         var text = "Testing, testing 1, 2, 3."
         repeat {
             text += " " + text
         } while text.count < 100000
-        let textPayload = self.payload(text: text)
-
-        performServerTest (asyncTasks: { expectation in
-            self.performTest(framesToSend: [(true, self.opcodeText, textPayload)],
-                             expectedFrames: [(true, self.opcodeText, textPayload)],
-                             expectation: expectation)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeText, textPayload)],
-                                 expectedFrames: [(true, self.opcodeText, textPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: true)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeText, textPayload)],
-                                 expectedFrames: [(true, self.opcodeText, textPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: false)
-            })
+        var payloadBuffer = ByteBufferAllocator().buffer(capacity: text.count)
+        payloadBuffer.writeString(text)
+        performServerTest(asyncTasks: { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(text)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(raw: text, compressed: true)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(text)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        })
     }
 
     func testTextMediumMessage() {
         register(closeReason: .noReasonCodeSent)
-
         var text = ""
         repeat {
             text += "Testing, testing 1,2,3. "
         } while text.count < 1000
-        let textPayload = self.payload(text: text)
-
+        var payloadBuffer = ByteBufferAllocator().buffer(capacity: text.count)
+        payloadBuffer.writeString(text)
         performServerTest(asyncTasks: { expectation in
-            self.performTest(framesToSend: [(true, self.opcodeText, textPayload)],
-                             expectedFrames: [(true, self.opcodeText, textPayload)],
-                             expectation: expectation)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeText, textPayload)],
-                                 expectedFrames: [(true, self.opcodeText, textPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: true)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeText, textPayload)],
-                                 expectedFrames: [(true, self.opcodeText, textPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: false)
-            })
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(text)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(raw: text, compressed: true)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(text)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        })
     }
 
     func testTextShortMessage() {
-        register(closeReason: .noReasonCodeSent)
-
-        let textPayload = self.payload(text: "Testing, testing 1,2,3")
-
+         register(closeReason: .noReasonCodeSent)
+        let textPayload = "Testing, testing 1,2,3"
+        var payloadBuffer = ByteBufferAllocator().buffer(capacity: textPayload.count)
+        payloadBuffer.writeString(textPayload)
         performServerTest(asyncTasks: { expectation in
-            self.performTest(framesToSend: [(true, self.opcodeText, textPayload)],
-                             expectedFrames: [(true, self.opcodeText, textPayload)],
-                             expectation: expectation)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeText, textPayload)],
-                                 expectedFrames: [(true, self.opcodeText, textPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: true)
-            }, { expectation in
-                self.performTest(framesToSend: [(true, self.opcodeText, textPayload)],
-                                 expectedFrames: [(true, self.opcodeText, textPayload)],
-                                 expectation: expectation, negotiateCompression: true, compressed: false)
-            })
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(textPayload)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(raw: textPayload, compressed: true)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+        }
+        }, { expectation in
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
+            _client?.sendMessage(textPayload)
+            _client?.onMessage { recievedData in
+                XCTAssertEqual(recievedData, payloadBuffer, "The payload \(recievedData) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
+        })
     }
 
     func testTextShortMessageWithQueryParams() {
         register(closeReason: .noReasonCodeSent, testQueryParams: true)
-        let textPayload = self.payload(text: "Keys and Values: ")
-        let expectedPayload = self.payload(text: "Keys and Values: p1,p2 and v1,v2")
         performServerTest(asyncTasks: { expectation in
-            self.performTest(onPath: "/wstester?p1=v1&p2=v2", framesToSend: [(true, self.opcodeText, textPayload)],
-                             expectedFrames: [(true, self.opcodeText, expectedPayload)],
-                             expectation: expectation)
+            let textPayload = "Keys and Values: "
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester?p1=v1&p2=v2", requestKey: "test")
+            _client?.sendMessage(textPayload)
+            _client?.onMessage { recieved in
+                var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
+                expectedPayload.writeString("Keys and Values: p1,p2 and v1,v2")
+                XCTAssertEqual(recieved, expectedPayload, "The payload \(recieved) doesn't equal \(expectedPayload)")
+                expectation.fulfill()
+            }
         })
     }
 
     func testUserDefinedCloseCode() {
         register(closeReason: .userDefined(65535))
-
         performServerTest { expectation in
-
-            let closePayload = self.payload(closeReasonCode: .userDefined(65535))
-            let returnPayload = self.payload(closeReasonCode: .userDefined(65535))
-
-            self.performTest(framesToSend: [(true, self.opcodeClose, closePayload)],
-                             expectedFrames: [(true, self.opcodeClose, returnPayload)],
-                             expectation: expectation)
+            var closePayload = ByteBufferAllocator().buffer(capacity: 8)
+            closePayload.writeInteger(WebSocketCloseReasonCode.userDefined(65535).code())
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(data: closePayload, opcode: .connectionClose, finalFrame: true, compressed: false)
+            _client?.onClose { _, data in
+                XCTAssertEqual(data, closePayload, "The payload \(data) doesn't equal \(closePayload)")
+                expectation.fulfill()
+            }
         }
     }
 
     func testUserCloseMessage() {
         register(closeReason: .normal)
-
         performServerTest { expectation in
             let testString = "Testing, 1,2,3"
-            let dataPayload = testString.data(using: String.Encoding.utf8)!
-            let payload = NSMutableData()
-            let closeReasonCode = self.payload(closeReasonCode: .normal)
-            payload.append(closeReasonCode.bytes, length: closeReasonCode.length)
-            payload.append(dataPayload)
-
-            self.performTest(framesToSend: [(true, self.opcodeClose, payload)],
-                             expectedFrames: [(true, self.opcodeClose, payload)],
-                             expectation: expectation)
+            var payloadBuffer = ByteBufferAllocator().buffer(capacity: 16)
+            payloadBuffer.writeInteger(WebSocketCloseReasonCode.normal.code())
+            payloadBuffer.writeString(testString)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage(data: payloadBuffer, opcode: .connectionClose, finalFrame: true, compressed: false)
+            _client?.onClose { _, data in
+                XCTAssertEqual(data, payloadBuffer, "The payload \(data) doesn't equal the expected \(payloadBuffer)")
+                expectation.fulfill()
+            }
         }
     }
 
     func testNullCharacter() {
         register(closeReason: .noReasonCodeSent)
-
         performServerTest { expectation in
-            let textPayload = self.payload(text: "\u{00}")
-            self.performTest(framesToSend: [(true, self.opcodeText, textPayload)],
-                             expectedFrames: [(true, self.opcodeText, textPayload)],
-                             expectation: expectation)
+            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
+            _client?.sendMessage("\u{00}")
+            _client?.onMessage { data in
+                XCTAssertEqual(data.getString(at: 0, length: data.readableBytes), "\u{00}", "The Payload doesn't Equal expected payload ")
+                expectation.fulfill()
+            }
         }
     }
 }

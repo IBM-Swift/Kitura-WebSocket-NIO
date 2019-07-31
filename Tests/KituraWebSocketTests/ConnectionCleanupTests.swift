@@ -19,7 +19,6 @@ import Foundation
 import NIO
 import NIOWebSocket
 
-
 class ConnectionCleanupTests: KituraTest {
 
     static var allTests: [(String, (ConnectionCleanupTests) -> () throws -> Void)] {
@@ -27,7 +26,7 @@ class ConnectionCleanupTests: KituraTest {
             ("testNilConnectionTimeOut", testNilConnectionTimeOut),
             ("testSingleConnectionTimeOut", testSingleConnectionTimeOut),
             ("testPingKeepsConnectionAlive", testPingKeepsConnectionAlive),
-            ("testMultiConnectionTimeOut", testMultiConnectionTimeOut),
+            ("testMultiConnectionTimeOut", testMultiConnectionTimeOut)
         ]
     }
 
@@ -71,7 +70,7 @@ class ConnectionCleanupTests: KituraTest {
                 return
             }
 
-            client.onPing = { data in
+            client.onPing { data in
                 client.pong(data: data)
             }
 
@@ -103,7 +102,7 @@ class ConnectionCleanupTests: KituraTest {
                 return
             }
 
-            client2.onPing = { data in
+            client2.onPing { data in
                 client2.pong(data: data)
             }
 
@@ -114,3 +113,4 @@ class ConnectionCleanupTests: KituraTest {
         }
     }
 }
+

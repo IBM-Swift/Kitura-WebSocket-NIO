@@ -89,10 +89,12 @@ class PermessageDeflateDecompressor : ChannelInboundHandler {
         var inflatedPayload = inflatePayload(in: inputBuffer, allocator: context.channel.allocator)
 
         // Apply the WebSocket mask on the inflated payload
-        inflatedPayload.webSocketMask(frame.maskKey!)
+        if let maskKey = frame.maskKey{
+            inflatedPayload.webSocketMask(maskKey)
+        }
 
         // Create a new frame with the inflated payload and pass it on to the next inbound handler, mostly WebSocketConnection
-        let inflatedFrame = WebSocketFrame(fin: true, rsv1: false, opcode: self.messageType!, maskKey: frame.maskKey!, data: inflatedPayload)
+        let inflatedFrame = WebSocketFrame(fin: true, rsv1: false, opcode: self.messageType!, maskKey: frame.maskKey, data: inflatedPayload)
         context.fireChannelRead(self.wrapInboundOut(inflatedFrame))
     }
 
