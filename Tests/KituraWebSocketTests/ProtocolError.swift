@@ -28,7 +28,6 @@ class ProtocolErrorTests: KituraTest {
             ("testPingWithOversizedPayload", testPingWithOversizedPayload),
             ("testFragmentedPing", testFragmentedPing),
             ("testInvalidOpCode", testInvalidOpCode),
-            ("testInvalidRSVCode", testInvalidRSVCode),
             ("testInvalidUserCloseCode", testInvalidUserCloseCode),
             ("testCloseWithOversizedPayload", testCloseWithOversizedPayload),
             ("testJustContinuationFrame", testJustContinuationFrame),
@@ -122,26 +121,6 @@ class ProtocolErrorTests: KituraTest {
             expectedPayload.append(part.bytes, length: part.length)
 
             self.performTest(framesToSend: [(true, 15, payload)],
-                             expectedFrames: [(true, self.opcodeClose, expectedPayload)],
-                             expectation: expectation)
-        }
-    }
-
-    func testInvalidRSVCode() {
-        register(closeReason: .protocolError)
-
-        performServerTest { expectation in
-
-            var bytes = [0x00, 0x01]
-            let payload = NSMutableData(bytes: &bytes, length: bytes.count)
-
-            let expectedPayload = NSMutableData()
-            var part = self.payload(closeReasonCode: .protocolError)
-            expectedPayload.append(part.bytes, length: part.length)
-            part = self.payload(text: "RSV3 must be 0 unless an extension is negotiated that defines meanings for non-zero values")
-            expectedPayload.append(part.bytes, length: part.length)
-            // 25 becomes 0011001 which is a ping (op code 9) and rsv = 1
-            self.performTest(framesToSend: [(true, 25, payload)],
                              expectedFrames: [(true, self.opcodeClose, expectedPayload)],
                              expectation: expectation)
         }

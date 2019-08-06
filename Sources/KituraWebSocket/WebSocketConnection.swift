@@ -40,9 +40,7 @@ public class WebSocketConnection {
     var message: ByteBuffer?
 
     weak var context: ChannelHandlerContext?
-
-    private var errors: [String] = []
-
+    
     // A connection timeout configured by the WebSocketService
     private let connectionTimeout: Int?
 
@@ -117,17 +115,6 @@ extension WebSocketConnection: ChannelInboundHandler {
 
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         let frame = self.unwrapInboundIn(data)
-
-        do {
-            try validateRSV(frame: frame)
-            guard frame.extensionData == nil else {
-                connectionClosed(reason: .protocolError, description: "Extension data must be nil when no extension is negotiated")
-                return
-            }
-        } catch {
-            connectionClosed(reason: .protocolError, description: "\(errors.joined(separator: ",")) must be 0 unless an extension is negotiated that defines meanings for non-zero values")
-        }
-
         var data = unmaskedData(frame: frame)
         switch frame.opcode {
         case .text:
@@ -287,29 +274,6 @@ extension WebSocketConnection: ChannelInboundHandler {
            frameData.webSocketUnmask(maskingKey)
        }
        return frameData
-    }
-
-    private enum RSVError: Error {
-        case invalidRSV
-    }
-
-    private func validateRSV(frame: WebSocketFrame) throws {
-
-        if frame.rsv1 {
-           errors.append("RSV1")
-        }
-
-        if frame.rsv2 {
-           errors.append("RSV2")
-        }
-
-        if frame.rsv3 {
-            errors.append("RSV3")
-        }
-
-        guard errors.isEmpty else {
-            throw RSVError.invalidRSV
-        }
     }
 }
 
