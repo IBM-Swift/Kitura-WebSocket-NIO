@@ -34,14 +34,26 @@ public class WSConnectionUpgradeFactory: ProtocolHandlerFactory {
     /// Return a WebSocketConnection channel handler for the given request
     public func handler(for request: ServerRequest) -> ChannelHandler {
         let wsRequest = WSServerRequest(request: request)
+        let hasNoExtensions: Bool = hasNoExtensionsConfigured(request: request)
+        
         let service = registry[wsRequest.urlURL.path]
 
-        let connection = WebSocketConnection(request: wsRequest, service: service)
+        let connection = WebSocketConnection(request: wsRequest, service: service, hasNoExtensions: hasNoExtensions )
         connection.service = service
 
         return connection
     }
+    
+    ///Return true if extensions are configured in HTTP upgrade header
+    public func hasNoExtensionsConfigured(request: ServerRequest) -> Bool {
 
+        if let  hasNoExtensions = request.headers["sec-websocket-extensions"]?.first?.split(separator: ";").first {
+            return hasNoExtensions.isEmpty
+        }
+        return true
+    }
+    
+    
     /// Return all the extension handlers enabled for this connection
     public func extensionHandlers(header: String) -> [ChannelHandler] {
         var handlers: [ChannelHandler] = []

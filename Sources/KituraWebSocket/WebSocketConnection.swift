@@ -46,10 +46,15 @@ public class WebSocketConnection {
 
     // Are we waiting for a pong in response to a heartbeat ping?
     private var waitingForPong: Bool = false
+    
+    private var hasNoExtensions: Bool
+    
+    private var errors : [String] = []
 
-    init(request: ServerRequest, service: WebSocketService? = nil) {
+    init(request: ServerRequest, service: WebSocketService? = nil, hasNoExtensions: Bool) {
         self.request = request
         self.connectionTimeout = service?.connectionTimeout
+        self.hasNoExtensions = hasNoExtensions
     }
 
     public func close(reason: WebSocketCloseReasonCode? = nil, description: String? = nil) {
@@ -115,6 +120,15 @@ extension WebSocketConnection: ChannelInboundHandler {
 
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         let frame = self.unwrapInboundIn(data)
+        
+        do {
+            try validateRSV(frame: frame)
+            
+        } catch {
+            connectionClosed(reason: .protocolError, description: "\(errors.joined(separator: ",")) must be 0 unless negotiated to defined for non-zero values")
+            return
+        }
+        
         var data = unmaskedData(frame: frame)
         switch frame.opcode {
         case .text:
@@ -274,6 +288,30 @@ extension WebSocketConnection: ChannelInboundHandler {
            frameData.webSocketUnmask(maskingKey)
        }
        return frameData
+    }
+    
+    private enum RSVError: Error {
+        case invalidRSV
+    }
+    
+    private func validateRSV(frame: WebSocketFrame) throws {
+        
+        if self.hasNoExtensions && frame.rsv1 {
+                errors.append("RSV1")
+        }
+        
+        if frame.rsv2 {
+            errors.append("RSV2")
+        }
+        
+        if frame.rsv3 {
+            errors.append("RSV3")
+        }
+        
+        guard errors.isEmpty else {
+            throw RSVError.invalidRSV
+        }
+        
     }
 }
 
