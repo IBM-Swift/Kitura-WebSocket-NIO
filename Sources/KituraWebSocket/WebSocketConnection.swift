@@ -125,8 +125,7 @@ extension WebSocketConnection: ChannelInboundHandler {
             try validateRSV(frame: frame)
             
         } catch {
-            connectionClosed(reason: .protocolError, description: "\(errors.joined(separator: ",")) must be 0 unless negotiated to defined for non-zero values")
-            return
+            connectionClosed(reason: .protocolError, description: "\(errors.joined(separator: ",")) must be 0 unless negotiated to define meaning for non-zero values")
         }
         
         var data = unmaskedData(frame: frame)

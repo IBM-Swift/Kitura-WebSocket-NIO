@@ -48,7 +48,7 @@ public class WSConnectionUpgradeFactory: ProtocolHandlerFactory {
     public func hasNoExtensionsConfigured(request: ServerRequest) -> Bool {
 
         if let  hasNoExtensions = request.headers["sec-websocket-extensions"]?.first?.split(separator: ";").first {
-            return hasNoExtensions.isEmpty
+            return (hasNoExtensions.lowercased() != "permessage-deflate")
         }
         return true
     }
