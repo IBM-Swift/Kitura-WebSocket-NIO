@@ -47,14 +47,11 @@ public class WebSocketConnection {
     // Are we waiting for a pong in response to a heartbeat ping?
     private var waitingForPong: Bool = false
     
-    private var hasNoExtensions: Bool
-    
     private var errors : [String] = []
 
-    init(request: ServerRequest, service: WebSocketService? = nil, hasNoExtensions: Bool) {
+    init(request: ServerRequest, service: WebSocketService? = nil) {
         self.request = request
         self.connectionTimeout = service?.connectionTimeout
-        self.hasNoExtensions = hasNoExtensions
     }
 
     public func close(reason: WebSocketCloseReasonCode? = nil, description: String? = nil) {
@@ -119,11 +116,14 @@ extension WebSocketConnection: ChannelInboundHandler {
     }
 
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+        
+        //Are no extensions negotiated with WebSocket upgrade request
+        let hasNoExtensions = self.hasNoExtensionsConfigured(request: self.request)
+        
         let frame = self.unwrapInboundIn(data)
         
         do {
-            try validateRSV(frame: frame)
-            
+            try validateRSV(frame: frame, hasNoExtensions: hasNoExtensions)
         } catch {
             connectionClosed(reason: .protocolError, description: "\(errors.joined(separator: ",")) must be 0 unless negotiated to define meaning for non-zero values")
         }
@@ -293,9 +293,9 @@ extension WebSocketConnection: ChannelInboundHandler {
         case invalidRSV
     }
     
-    private func validateRSV(frame: WebSocketFrame) throws {
+    private func validateRSV(frame: WebSocketFrame, hasNoExtensions: Bool) throws {
         
-        if self.hasNoExtensions && frame.rsv1 {
+        if hasNoExtensions && frame.rsv1 {
                 errors.append("RSV1")
         }
         
@@ -311,6 +311,15 @@ extension WebSocketConnection: ChannelInboundHandler {
             throw RSVError.invalidRSV
         }
         
+    }
+    
+    //HTTP upgrade request header has no extensions configured
+    private func hasNoExtensionsConfigured(request: ServerRequest) -> Bool {
+        
+        if let hasNoExtensions = request.headers["sec-websocket-extensions"]?.first?.split(separator: ";").first {
+            return hasNoExtensions != "permessage-deflate"
+        }
+        return true
     }
 }
 

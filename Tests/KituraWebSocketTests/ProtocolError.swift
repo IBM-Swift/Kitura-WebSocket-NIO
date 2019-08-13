@@ -291,7 +291,7 @@ class ProtocolErrorTests: KituraTest {
         let payload = NSMutableData(bytes: &bytes, length: bytes.count)
         
         
-        performServerTest (asyncTasks:{ expectation in
+        performServerTest (asyncTasks: { expectation in
             let expectedPayload = NSMutableData()
             var part = self.payload(closeReasonCode: .protocolError)
             expectedPayload.append(part.bytes, length: part.length)
@@ -301,8 +301,8 @@ class ProtocolErrorTests: KituraTest {
             self.performTest(framesToSend: [(true, 25, payload)],
                              expectedFrames: [(true, self.opcodeClose, expectedPayload)],
                              expectation: expectation)
-
-        } , { expectation in
+            
+        }, { expectation in
             let expectedPayload = NSMutableData()
             var part = self.payload(closeReasonCode: .protocolError)
             expectedPayload.append(part.bytes, length: part.length)
@@ -312,8 +312,7 @@ class ProtocolErrorTests: KituraTest {
             self.performTest(framesToSend: [(true, 41, payload)],
                              expectedFrames: [(true, self.opcodeClose, expectedPayload)],
                              expectation: expectation)
-//
-        } , { expectation in
+        },{ expectation in
             let expectedPayload = NSMutableData()
             var part = self.payload(closeReasonCode: .protocolError)
             expectedPayload.append(part.bytes, length: part.length)
@@ -324,11 +323,11 @@ class ProtocolErrorTests: KituraTest {
                              expectedFrames: [(true, self.opcodeClose, expectedPayload)],
                              expectation: expectation)
         }, { expectation in
-            // rsv1 is set and compression is negotiated
-            self.performTest(framesToSend: [(true, self.opcodeBinary, payload)],
-                             expectedFrames: [(true, self.opcodeBinary, payload)],
-                             expectation: expectation, negotiateCompression: true,  compressed: true)
-
+            // 73 becomes 1001001 which is a ping and rsv1 is set to 1, set negotiateCompression
+            // ensures compression is negotiated
+            self.performTest(framesToSend: [(true, 73, payload)],
+                             expectedFrames: [(true, self.opcodePong, payload)],
+                             expectation: expectation, negotiateCompression: true, compressed: true)
         })
     }
 }
