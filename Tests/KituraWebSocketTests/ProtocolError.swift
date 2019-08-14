@@ -35,7 +35,8 @@ class ProtocolErrorTests: KituraTest {
             ("testInvalidUTF", testInvalidUTF),
             ("testInvalidUTFCloseMessage", testInvalidUTFCloseMessage),
             ("testTextAndBinaryFrames", testTextAndBinaryFrames),
-            ("testUnmaskedFrame", testUnmaskedFrame)
+            ("testUnmaskedFrame", testUnmaskedFrame),
+            ("testInvalidRSVCode", testInvalidRSVCode)
         ]
     }
 
