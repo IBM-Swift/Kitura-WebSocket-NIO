@@ -33,7 +33,7 @@ public class WSConnectionUpgradeFactory: ProtocolHandlerFactory {
 
     /// Return a WebSocketConnection channel handler for the given request
     public func handler(for request: ServerRequest) -> ChannelHandler {
-        let wsRequest = WSServerRequest(request: request)        
+        let wsRequest = WSServerRequest(request: request)
         let service = registry[wsRequest.urlURL.path]
 
         let connection = WebSocketConnection(request: wsRequest, service: service)
@@ -41,7 +41,7 @@ public class WSConnectionUpgradeFactory: ProtocolHandlerFactory {
 
         return connection
     }
-    
+
     /// Return all the extension handlers enabled for this connection
     public func extensionHandlers(header: String) -> [ChannelHandler] {
         var handlers: [ChannelHandler] = []

@@ -121,13 +121,13 @@ extension WebSocketConnection: ChannelInboundHandler {
         let hasNoExtensions = self.hasNoExtensionsConfigured(request: self.request)
         
         let frame = self.unwrapInboundIn(data)
-        
+
         do {
             try validateRSV(frame: frame, hasNoExtensions: hasNoExtensions)
         } catch {
             connectionClosed(reason: .protocolError, description: "\(errors.joined(separator: ",")) must be 0 unless negotiated to define meaning for non-zero values")
         }
-        
+
         var data = unmaskedData(frame: frame)
         switch frame.opcode {
         case .text:
@@ -288,34 +288,33 @@ extension WebSocketConnection: ChannelInboundHandler {
        }
        return frameData
     }
-    
+
     private enum RSVError: Error {
         case invalidRSV
     }
-    
+
     private func validateRSV(frame: WebSocketFrame, hasNoExtensions: Bool) throws {
-        
+
         if hasNoExtensions && frame.rsv1 {
                 errors.append("RSV1")
         }
-        
+
         if frame.rsv2 {
             errors.append("RSV2")
         }
-        
+
         if frame.rsv3 {
             errors.append("RSV3")
         }
-        
+
         guard errors.isEmpty else {
             throw RSVError.invalidRSV
         }
-        
     }
-    
+
     //HTTP upgrade request header has no extensions configured
     private func hasNoExtensionsConfigured(request: ServerRequest) -> Bool {
-        
+
         if let hasNoExtensions = request.headers["sec-websocket-extensions"]?.first?.split(separator: ";").first {
             return hasNoExtensions != "permessage-deflate"
         }
