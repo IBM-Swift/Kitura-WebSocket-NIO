@@ -290,8 +290,7 @@ class ProtocolErrorTests: KituraTest {
         
         var bytes = [0x00, 0x01]
         let payload = NSMutableData(bytes: &bytes, length: bytes.count)
-        
-        
+
         performServerTest (asyncTasks: { expectation in
             let expectedPayload = NSMutableData()
             var part = self.payload(closeReasonCode: .protocolError)
@@ -302,7 +301,6 @@ class ProtocolErrorTests: KituraTest {
             self.performTest(framesToSend: [(true, 25, payload)],
                              expectedFrames: [(true, self.opcodeClose, expectedPayload)],
                              expectation: expectation)
-            
         }, { expectation in
             let expectedPayload = NSMutableData()
             var part = self.payload(closeReasonCode: .protocolError)

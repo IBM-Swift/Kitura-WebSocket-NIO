@@ -116,10 +116,10 @@ extension WebSocketConnection: ChannelInboundHandler {
     }
 
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        
-        //Are no extensions negotiated with WebSocket upgrade request
+
+        // Are no extensions negotiated with WebSocket upgrade request
         let hasNoExtensions = self.hasNoExtensionsConfigured(request: self.request)
-        
+
         let frame = self.unwrapInboundIn(data)
 
         do {
@@ -296,7 +296,7 @@ extension WebSocketConnection: ChannelInboundHandler {
     private func validateRSV(frame: WebSocketFrame, hasNoExtensions: Bool) throws {
 
         if hasNoExtensions && frame.rsv1 {
-                errors.append("RSV1")
+            errors.append("RSV1")
         }
 
         if frame.rsv2 {
@@ -312,9 +312,8 @@ extension WebSocketConnection: ChannelInboundHandler {
         }
     }
 
-    //HTTP upgrade request header has no extensions configured
+    // HTTP upgrade request header has no extensions configured
     private func hasNoExtensionsConfigured(request: ServerRequest) -> Bool {
-
         if let hasNoExtensions = request.headers["sec-websocket-extensions"]?.first?.split(separator: ";").first {
             return hasNoExtensions != "permessage-deflate"
         }
@@ -376,7 +375,7 @@ extension WebSocketConnection {
     }
 }
 
-//Callbacks to the WebSocketService
+//  Callbacks to the WebSocketService
 extension WebSocketConnection {
     func fireConnected() {
         service?.connected(connection: self)
