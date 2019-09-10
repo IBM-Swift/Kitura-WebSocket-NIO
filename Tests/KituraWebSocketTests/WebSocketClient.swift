@@ -46,7 +46,7 @@ class WebSocketClient {
 
     var channel: Channel? {
         get {
-            channelAccessQueue.sync {
+            return channelAccessQueue.sync {
                 return _channel!
             }
         }
