@@ -18,7 +18,6 @@ import Foundation
 import NIO
 import NIOHTTP1
 import NIOWebSocket
-import NIOConcurrencyHelpers
 
 class WebSocketClient {
 
@@ -196,5 +195,5 @@ extension WebSocketClientDelegate {
     func upgradeFailed(_ channel: Channel) -> Void { }
 }
 
-// Dummy delegate
+// Dummy Websocket client delegate object
 class DummyDelegate: WebSocketClientDelegate { }
