@@ -18,9 +18,11 @@ import Foundation
 import KituraNet
 import NIO
 import NIOHTTP1
+import Dispatch
 
 public class WSConnectionUpgradeFactory: ProtocolHandlerFactory {
     private var registry: [String: WebSocketService] = [:]
+    private var registryAccessQueue: DispatchQueue = DispatchQueue(label: "Registry Access Synchronization")
 
     private var extensions: [String: WebSocketProtocolExtension] = [:]
     public let name = "websocket"
@@ -33,13 +35,13 @@ public class WSConnectionUpgradeFactory: ProtocolHandlerFactory {
 
     /// Return a WebSocketConnection channel handler for the given request
     public func handler(for request: ServerRequest) -> ChannelHandler {
-        let wsRequest = WSServerRequest(request: request)
-        let service = registry[wsRequest.urlURL.path]
-
-        let connection = WebSocketConnection(request: wsRequest, service: service)
-        connection.service = service
-
-        return connection
+        registryAccessQueue.sync {
+            let wsRequest = WSServerRequest(request: request)
+            let service = registry[wsRequest.urlURL.path]
+            let connection = WebSocketConnection(request: wsRequest, service: service)
+            connection.service = service
+            return connection
+        }
     }
 
     /// Return all the extension handlers enabled for this connection
@@ -69,7 +71,9 @@ public class WSConnectionUpgradeFactory: ProtocolHandlerFactory {
         } else {
             path = "/" + onPath
         }
-        registry[path] = service
+        registryAccessQueue.sync {
+            registry[path] = service
+        }
     }
 
     func unregister(path thePath: String) {
@@ -79,7 +83,9 @@ public class WSConnectionUpgradeFactory: ProtocolHandlerFactory {
         } else {
             path = "/" + thePath
         }
-        registry.removeValue(forKey: path)
+        registryAccessQueue.sync {
+            registry.removeValue(forKey: path)
+        }
     }
 
     public func isServiceRegistered(at path: String) -> Bool {

@@ -18,6 +18,7 @@ import Foundation
 import NIO
 import NIOHTTP1
 import NIOWebSocket
+import NIOConcurrencyHelpers
 
 class WebSocketClient {
 
@@ -26,14 +27,15 @@ class WebSocketClient {
     let host: String
     let port: Int
     let uri: String
-    var channel: Channel? = nil
+    private var _channel: Channel? = nil
+    var delegate: WebSocketDelegate? = nil
+    let channelAccessQueue: DispatchQueue = DispatchQueue(label: "Channel Access Synchronization")
 
-    public init?(host: String, port: Int, uri: String, requestKey: String, onOpen: @escaping (Channel?) -> Void = { _ in }) {
+    public init?(host: String, port: Int, uri: String, requestKey: String) {
         self.requestKey = requestKey
         self.host = host
         self.port = port
         self.uri = uri
-        self.onOpen = onOpen
         do {
             try connect()
         } catch {
@@ -41,8 +43,21 @@ class WebSocketClient {
         }
     }
 
+    var channel: Channel {
+        get {
+            channelAccessQueue.sync {
+                return _channel!
+            }
+        }
+        set {
+            channelAccessQueue.sync {
+                _channel = newValue
+            }
+        }
+    }
+
     public var isConnected: Bool {
-        return channel?.isActive ?? false
+        return channel.isActive
     }
 
     private func connect() throws {
@@ -61,7 +76,7 @@ class WebSocketClient {
 
     func clientChannelInitializer(channel: Channel)  -> EventLoopFuture<Void> {
         let basicUpgrader = NIOWebClientSocketUpgrader(requestKey: "test") { channel, response in
-            self.onOpen(channel)
+            self.delegate?.open(channel)
             return channel.pipeline.addHandler(WebSocketMessageHandler(client: self))
         }
         let config: NIOHTTPClientUpgradeConfiguration = (upgraders: [basicUpgrader], completionHandler: { context in
@@ -82,26 +97,12 @@ class WebSocketClient {
 
     public func pong(data: ByteBuffer) {
         let frame = WebSocketFrame(fin: true, opcode: .pong, data: data)
-        guard let channel = channel else { return }
         channel.writeAndFlush(frame, promise: nil)
     }
 
     public func close() {
         //Needs implementation
     }
-
-    // default, dummy callbacks
-    public var onOpen: (Channel) -> Void = { _ in }
-
-    public var onClose: (Channel) -> Void = { _ in }
-
-    public var onMessage: (ByteBuffer) -> Void = { _ in }
-
-    public var onPing: (ByteBuffer) -> Void = { _ in }
-
-    public var onPong: () -> Void = { }
-
-    public var onUpgradeFailure: (Channel) -> Void = { _ in }
 }
 
 class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
@@ -135,14 +136,14 @@ class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
                 buffer = data
             }
             if frame.fin {
-                client.onMessage(buffer)
+                client.delegate?.message(buffer)
             }
         case .ping:
-            client.onPing(unmaskedData(frame: frame))
+            client.delegate?.ping(unmaskedData(frame: frame))
         case .connectionClose:
-            client.onClose(context.channel)
+            client.delegate?.close(context.channel)
         case .pong:
-            client.onPong()
+            client.delegate?.pong()
         default:
             break
         }
@@ -156,3 +157,33 @@ class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
 extension HTTPVersion {
     static let http11 = HTTPVersion(major: 1, minor: 1)
 }
+
+protocol WebSocketDelegate {
+
+    func open(_ channel: Channel) -> Void
+
+    func close(_ channel: Channel) -> Void
+
+    func message(_ data: ByteBuffer) -> Void
+
+    func ping(_ data: ByteBuffer) -> Void
+
+    func pong() -> Void
+
+    func upgradeFailure(_ channel: Channel) -> Void
+}
+
+extension WebSocketDelegate {
+    func open(_ channel: Channel) -> Void { }
+
+    func close(_ channel: Channel) -> Void { }
+
+    func message(_ channel: ByteBuffer) -> Void { }
+
+    func ping(_ channel: ByteBuffer) -> Void { }
+
+    func pong() -> Void { }
+
+    func upgradeFailure(_ channel: Channel) -> Void { }
+}
+

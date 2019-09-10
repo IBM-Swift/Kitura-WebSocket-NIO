@@ -50,30 +50,30 @@ class ConnectionCleanupTests: KituraTest {
         register(closeReason: .noReasonCodeSent, connectionTimeout: 2)
         performServerTest { expectation in
             let _client = WebSocketClient(host: "localhost", port: 8080,
-                                         uri: "/wstester", requestKey: "test")
+                                          uri: "/wstester", requestKey: "test")
             guard let client = _client else {
                 XCTFail("Couldn't create a WebSocket connection")
                 return
             }
             sleep(4)
+            let _delegate = delegate(client: client)
+            client.delegate = _delegate
             XCTAssertFalse(client.isConnected)
             expectation.fulfill()
-        }
+            }
     }
 
     func testPingKeepsConnectionAlive() {
         register(closeReason: .noReasonCodeSent, connectionTimeout: 2)
         performServerTest { expectation in
             let _client = WebSocketClient(host: "localhost", port: 8080,
-                                         uri: "/wstester", requestKey: "test")
+                                          uri: "/wstester", requestKey: "test")
             guard let client = _client else {
                 XCTFail("Couldn't create a WebSocket connection")
                 return
             }
-
-            client.onPing = { data in
-                client.pong(data: data)
-            }
+            let _delegate = delegate(client: client)
+            client.delegate = _delegate
 
             sleep(4)
             XCTAssertTrue(client.isConnected)
@@ -93,6 +93,8 @@ class ConnectionCleanupTests: KituraTest {
                 XCTFail("Couldn't establish a WebSocket connection with the server")
                 return
             }
+            let _delegate1 = dummyDelegate()
+            client1.delegate = _delegate1
 
             let _client2 = WebSocketClient(host: "localhost",
                                                 port: 8080,
@@ -103,10 +105,8 @@ class ConnectionCleanupTests: KituraTest {
                 return
             }
 
-            client2.onPing = { data in
-                client2.pong(data: data)
-            }
-
+            let _delegate2 = delegate(client: client2)
+            client2.delegate = _delegate2
             sleep(4)
             XCTAssertFalse(client1.isConnected)
             XCTAssertTrue(client2.isConnected)
@@ -114,3 +114,17 @@ class ConnectionCleanupTests: KituraTest {
         }
     }
 }
+
+class delegate: WebSocketDelegate {
+    weak var client: WebSocketClient?
+
+    init(client: WebSocketClient){
+        self.client = client
+    }
+
+    func ping(_ data: ByteBuffer) {
+        client?.pong(data: data)
+    }
+}
+
+class dummyDelegate: WebSocketDelegate { }

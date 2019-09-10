@@ -77,6 +77,7 @@ class KituraTest: XCTestCase {
     var httpHandler: HTTPResponseHandler?
 
     var compressor: PermessageDeflateCompressor = PermessageDeflateCompressor()
+    let connectionQueue : DispatchQueue = DispatchQueue(label: "Connection Queue")
 
     func performServerTest(line: Int = #line, asyncTasks: (XCTestExpectation) -> Void...) {
         let server = HTTP.createServer()

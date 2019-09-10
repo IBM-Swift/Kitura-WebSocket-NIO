@@ -21,12 +21,13 @@ import Foundation
 import KituraNet
 
 class TestWebSocketService: WebSocketService {
-    var connectionId = ""
+    private var _connectionId = ""
     let closeReason: WebSocketCloseReasonCode
     let pingMessage: String?
     let testServerRequest: Bool
     let testQueryParams: Bool
     var queryParams: [String: String] = [:]
+    let connectionIDAccessQueue: DispatchQueue = DispatchQueue(label: "Connection ID Access Queue")
 
     public init(closeReason: WebSocketCloseReasonCode, testServerRequest: Bool, pingMessage: String?, testQueryParams: Bool = false, connectionTimeout: Int? = nil) {
         self.closeReason = closeReason
@@ -38,9 +39,21 @@ class TestWebSocketService: WebSocketService {
 
     public let connectionTimeout: Int?
 
+    var connectionId: String {
+        get {
+            connectionIDAccessQueue.sync {
+                return _connectionId
+            }
+        }
+        set {
+            connectionIDAccessQueue.sync {
+                _connectionId = newValue
+            }
+        }
+    }
+
     public func connected(connection: WebSocketConnection) {
         connectionId = connection.id
-
         if let pingMessage = pingMessage {
             if pingMessage.count > 0 {
                 connection.ping(withMessage: pingMessage)
