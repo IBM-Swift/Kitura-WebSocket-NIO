@@ -35,7 +35,7 @@ public class WSConnectionUpgradeFactory: ProtocolHandlerFactory {
 
     /// Return a WebSocketConnection channel handler for the given request
     public func handler(for request: ServerRequest) -> ChannelHandler {
-        registryAccessQueue.sync {
+        return registryAccessQueue.sync {
             let wsRequest = WSServerRequest(request: request)
             let service = registry[wsRequest.urlURL.path]
             let connection = WebSocketConnection(request: wsRequest, service: service)

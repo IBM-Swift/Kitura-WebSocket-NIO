@@ -56,8 +56,6 @@ class ConnectionCleanupTests: KituraTest {
                 return
             }
             sleep(4)
-            let _delegate = delegate(client: client)
-            client.delegate = _delegate
             XCTAssertFalse(client.isConnected)
             expectation.fulfill()
             }
@@ -72,9 +70,8 @@ class ConnectionCleanupTests: KituraTest {
                 XCTFail("Couldn't create a WebSocket connection")
                 return
             }
-            let _delegate = delegate(client: client)
+            let _delegate = Delegate(client: client)
             client.delegate = _delegate
-
             sleep(4)
             XCTAssertTrue(client.isConnected)
             expectation.fulfill()
@@ -93,9 +90,6 @@ class ConnectionCleanupTests: KituraTest {
                 XCTFail("Couldn't establish a WebSocket connection with the server")
                 return
             }
-            let _delegate1 = dummyDelegate()
-            client1.delegate = _delegate1
-
             let _client2 = WebSocketClient(host: "localhost",
                                                 port: 8080,
                                                 uri: "/wstester",
@@ -104,9 +98,8 @@ class ConnectionCleanupTests: KituraTest {
                 XCTFail("Couldn't create a WebSocket connection")
                 return
             }
-
-            let _delegate2 = delegate(client: client2)
-            client2.delegate = _delegate2
+            let _delegate = Delegate(client: client2)
+            client2.delegate = _delegate
             sleep(4)
             XCTAssertFalse(client1.isConnected)
             XCTAssertTrue(client2.isConnected)
@@ -115,16 +108,15 @@ class ConnectionCleanupTests: KituraTest {
     }
 }
 
-class delegate: WebSocketDelegate {
+class Delegate: WebSocketClientDelegate {
     weak var client: WebSocketClient?
 
     init(client: WebSocketClient){
         self.client = client
     }
 
-    func ping(_ data: ByteBuffer) {
+    func onPing(_ data: ByteBuffer) {
         client?.pong(data: data)
     }
 }
 
-class dummyDelegate: WebSocketDelegate { }
