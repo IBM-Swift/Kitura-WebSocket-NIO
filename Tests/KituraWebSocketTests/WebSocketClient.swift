@@ -18,6 +18,7 @@ import Foundation
 import NIO
 import NIOHTTP1
 import NIOWebSocket
+import NIOConcurrencyHelpers
 
 class WebSocketClient {
 

@@ -41,7 +41,7 @@ class TestWebSocketService: WebSocketService {
 
     var connectionId: String {
         get {
-            connectionIDAccessQueue.sync {
+            return connectionIDAccessQueue.sync {
                 return _connectionId
             }
         }
