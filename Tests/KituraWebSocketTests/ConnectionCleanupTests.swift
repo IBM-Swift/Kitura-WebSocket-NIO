@@ -70,8 +70,11 @@ class ConnectionCleanupTests: KituraTest {
                 XCTFail("Couldn't create a WebSocket connection")
                 return
             }
-            let _delegate = Delegate(client: client)
-            client.delegate = _delegate
+
+            client.onPing = { data in
+                client.pong(data: data)
+            }
+
             sleep(4)
             XCTAssertTrue(client.isConnected)
             expectation.fulfill()
@@ -98,25 +101,16 @@ class ConnectionCleanupTests: KituraTest {
                 XCTFail("Couldn't create a WebSocket connection")
                 return
             }
-            let _delegate = Delegate(client: client2)
-            client2.delegate = _delegate
+
+            client2.onPing = { data in
+                client2.pong(data: data)
+            }
+
             sleep(4)
             XCTAssertFalse(client1.isConnected)
             XCTAssertTrue(client2.isConnected)
             expectation.fulfill()
         }
-    }
-}
-
-class Delegate: WebSocketClientDelegate {
-    weak var client: WebSocketClient?
-
-    init(client: WebSocketClient){
-        self.client = client
-    }
-
-    func onPing(_ data: ByteBuffer) {
-        client?.pong(data: data)
     }
 }
 

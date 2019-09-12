@@ -18,7 +18,6 @@ import Foundation
 import NIO
 import NIOHTTP1
 import NIOWebSocket
-import NIOConcurrencyHelpers
 
 class WebSocketClient {
 
@@ -27,16 +26,14 @@ class WebSocketClient {
     let host: String
     let port: Int
     let uri: String
-    private var _channel: Channel? = nil
-    var delegate: WebSocketClientDelegate
-    let channelAccessQueue: DispatchQueue = DispatchQueue(label: "Channel Access Synchronization")
+    var channel: Channel? = nil
 
-    public init?(host: String, port: Int, uri: String, requestKey: String) {
+    public init?(host: String, port: Int, uri: String, requestKey: String, onOpen: @escaping (Channel?) -> Void = { _ in }) {
         self.requestKey = requestKey
         self.host = host
         self.port = port
         self.uri = uri
-        self.delegate = DummyDelegate()
+        self.onOpen = onOpen
         do {
             try connect()
         } catch {
@@ -44,21 +41,8 @@ class WebSocketClient {
         }
     }
 
-    var channel: Channel? {
-        get {
-            return channelAccessQueue.sync {
-                return _channel!
-            }
-        }
-        set {
-            channelAccessQueue.sync {
-                _channel = newValue
-            }
-        }
-    }
-
     public var isConnected: Bool {
-        return (channel?.isActive)!
+        return channel?.isActive ?? false
     }
 
     private func connect() throws {
@@ -77,7 +61,7 @@ class WebSocketClient {
 
     func clientChannelInitializer(channel: Channel)  -> EventLoopFuture<Void> {
         let basicUpgrader = NIOWebClientSocketUpgrader(requestKey: "test") { channel, response in
-            self.delegate.connectionEstablished(channel)
+            self.onOpen(channel)
             return channel.pipeline.addHandler(WebSocketMessageHandler(client: self))
         }
         let config: NIOHTTPClientUpgradeConfiguration = (upgraders: [basicUpgrader], completionHandler: { context in
@@ -105,6 +89,19 @@ class WebSocketClient {
     public func close() {
         //Needs implementation
     }
+
+    // default, dummy callbacks
+    public var onOpen: (Channel) -> Void = { _ in }
+
+    public var onClose: (Channel) -> Void = { _ in }
+
+    public var onMessage: (ByteBuffer) -> Void = { _ in }
+
+    public var onPing: (ByteBuffer) -> Void = { _ in }
+
+    public var onPong: () -> Void = { }
+
+    public var onUpgradeFailure: (Channel) -> Void = { _ in }
 }
 
 class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
@@ -138,14 +135,14 @@ class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
                 buffer = data
             }
             if frame.fin {
-                client.delegate.messageRecieved(buffer)
+                client.onMessage(buffer)
             }
         case .ping:
-            client.delegate.onPing(unmaskedData(frame: frame))
+            client.onPing(unmaskedData(frame: frame))
         case .connectionClose:
-            client.delegate.connectionClosed(context.channel)
+            client.onClose(context.channel)
         case .pong:
-            client.delegate.onPong()
+            client.onPong()
         default:
             break
         }
@@ -159,42 +156,3 @@ class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
 extension HTTPVersion {
     static let http11 = HTTPVersion(major: 1, minor: 1)
 }
-
-// Call backs function delegate
-protocol WebSocketClientDelegate {
-
-    /// Adds a callback method which is called on successful connection establishment
-    func connectionEstablished(_ channel: Channel) -> Void
-
-    /// Adds a callback method which is called on connection closure
-    func connectionClosed(_ channel: Channel) -> Void
-
-    /// Adds a callback method which is called when message is recieved
-    func messageRecieved(_ data: ByteBuffer) -> Void
-
-    /// Adds a callback method which is called when ping message reception
-    func onPing(_ data: ByteBuffer) -> Void
-
-    /// Adds a callback method which is called when client receieves pong
-    func onPong() -> Void
-
-    /// Adds a callback method which is called when connection fails to upgrade
-    func upgradeFailed(_ channel: Channel) -> Void
-}
-
-extension WebSocketClientDelegate {
-    func connectionEstablished(_ channel: Channel) -> Void { }
-
-    func connectionClosed(_ channel: Channel) -> Void { }
-
-    func messageRecieved(_ data: ByteBuffer) -> Void { }
-
-    func onPing(_ data: ByteBuffer) -> Void { }
-
-    func onPong() -> Void { }
-
-    func upgradeFailed(_ channel: Channel) -> Void { }
-}
-
-// Dummy Websocket client delegate object
-class DummyDelegate: WebSocketClientDelegate { }
