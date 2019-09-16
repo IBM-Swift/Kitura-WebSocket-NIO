@@ -53,6 +53,7 @@ class ComplexTests: KituraTest {
         let expectedBinaryPayload = NSMutableData()
         expectedBinaryPayload.append(shortBinaryPayload.bytes, length: shortBinaryPayload.length)
         expectedBinaryPayload.append(mediumBinaryPayload.bytes, length: mediumBinaryPayload.length)
+
         performServerTest(asyncTasks: { expectation in
             self.performTest(framesToSend: [(false, self.opcodeBinary, shortBinaryPayload), (true, self.opcodeContinuation, mediumBinaryPayload)],
                              expectedFrames: [(true, self.opcodeBinary, expectedBinaryPayload)],

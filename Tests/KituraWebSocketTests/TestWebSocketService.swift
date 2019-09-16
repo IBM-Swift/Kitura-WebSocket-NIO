@@ -21,7 +21,7 @@ import Foundation
 import KituraNet
 
 class TestWebSocketService: WebSocketService {
-    private var connectionId = ""
+    var connectionId = ""
     let closeReason: WebSocketCloseReasonCode
     let pingMessage: String?
     let testServerRequest: Bool
@@ -40,6 +40,7 @@ class TestWebSocketService: WebSocketService {
 
     public func connected(connection: WebSocketConnection) {
         connectionId = connection.id
+
         if let pingMessage = pingMessage {
             if pingMessage.count > 0 {
                 connection.ping(withMessage: pingMessage)

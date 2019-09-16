@@ -50,7 +50,7 @@ class ConnectionCleanupTests: KituraTest {
         register(closeReason: .noReasonCodeSent, connectionTimeout: 2)
         performServerTest { expectation in
             let _client = WebSocketClient(host: "localhost", port: 8080,
-                                          uri: "/wstester", requestKey: "test")
+                                         uri: "/wstester", requestKey: "test")
             guard let client = _client else {
                 XCTFail("Couldn't create a WebSocket connection")
                 return
@@ -58,14 +58,14 @@ class ConnectionCleanupTests: KituraTest {
             sleep(4)
             XCTAssertFalse(client.isConnected)
             expectation.fulfill()
-            }
+        }
     }
 
     func testPingKeepsConnectionAlive() {
         register(closeReason: .noReasonCodeSent, connectionTimeout: 2)
         performServerTest { expectation in
             let _client = WebSocketClient(host: "localhost", port: 8080,
-                                          uri: "/wstester", requestKey: "test")
+                                         uri: "/wstester", requestKey: "test")
             guard let client = _client else {
                 XCTFail("Couldn't create a WebSocket connection")
                 return
@@ -93,6 +93,7 @@ class ConnectionCleanupTests: KituraTest {
                 XCTFail("Couldn't establish a WebSocket connection with the server")
                 return
             }
+
             let _client2 = WebSocketClient(host: "localhost",
                                                 port: 8080,
                                                 uri: "/wstester",
@@ -113,4 +114,3 @@ class ConnectionCleanupTests: KituraTest {
         }
     }
 }
-
