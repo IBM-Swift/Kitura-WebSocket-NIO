@@ -19,7 +19,6 @@ import NIO
 import NIOHTTP1
 import NIOWebSocket
 import Dispatch
-import KituraNet
 import XCTest
 @testable import KituraWebSocket
 
@@ -38,10 +37,6 @@ class WebSocketClient {
     var maxWindowBits: Int32
     var contextTakeover: ContextTakeover
     var maxFrameSize: Int
-//    let channelAccessQueue = DispatchQueue(label: "Channel Access Queue")
-
-    /// `WebSocketClientDelegate` provides a method to access callback functions
-//    var delegate: WebSocketClientDelegate = DummyDelegate()
 
     ///  This semaphore signals when the client successfully recieves the Connection upgrade response from remote server
     ///  Ensures that webSocket frames are sent on channel only after the connection is successfully upgraded to WebSocket Connection
@@ -90,17 +85,6 @@ class WebSocketClient {
             return nil
         }
     }
-
-//    var channel: Channel? {
-//        get {
-//            return channelAccessQueue.sync{
-//                return _channel
-//            }
-//        }
-//        set {
-//            channelAccessQueue.sync{_channel = newValue}
-//        }
-//    }
 
     // Whether the client is still alive
     public var isConnected: Bool {
@@ -332,27 +316,22 @@ class WebSocketClient {
     ///
 
     public func onMessage(_ callback: @escaping (ByteBuffer) -> Void) {
-//        delegate = DummyDelegate()
         executeOnEventLoop { self.onMessageCallback = callback }
     }
 
     public func onOpen(_ callback: @escaping (Channel) -> Void) {
-//        delegate = DummyDelegate()
         executeOnEventLoop { self.onOpenCallback = callback }
     }
 
     public func onClose(_ callback: @escaping (Channel, ByteBuffer) -> Void) {
-//        delegate = DummyDelegate()
         executeOnEventLoop { self.onCloseCallback = callback }
     }
 
     public func onPing(_ callback: @escaping (ByteBuffer) -> Void) {
-//        delegate = DummyDelegate()
         executeOnEventLoop { self.onPingCallback = callback }
     }
 
     public func onPong(_ callback: @escaping (WebSocketOpcode, ByteBuffer) -> Void) {
-//        delegate = DummyDelegate()
         executeOnEventLoop { self.onPongCallback  = callback }
     }
 
@@ -393,17 +372,13 @@ class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
             }
             if frame.fin {
                 client.onMessageCallback(buffer)
-//                client.delegate.messageRecieved(buffer)
             }
         case .ping:
             client.onPingCallback(unmaskedData(frame: frame))
-//            client.delegate.onPing(unmaskedData(frame: frame))
         case .connectionClose:
             client.onCloseCallback(context.channel, frame.data)
-//            client.delegate.connectionClosed(context.channel, frame.data)
         case .pong:
             client.onPongCallback(frame.opcode, frame.data)
-//            client.delegate.onPong(frame.opcode, frame.data)
         default:
             break
         }
@@ -445,43 +420,3 @@ enum ContextTakeover {
         return self != .server && self != .both
     }
 }
-//
-//// Callback functions delegate
-//protocol WebSocketClientDelegate {
-//
-//    /// Adds a callback method which is called on successful connection establishment
-//    func connectionEstablished(_ channel: Channel) -> Void
-//
-//    /// Adds a callback method which is called on connection closure
-//    func connectionClosed(_ channel: Channel, _ data: ByteBuffer) -> Void
-//
-//    /// Adds a callback method which is called when message is recieved
-//    func messageRecieved(_ data: ByteBuffer) -> Void
-//
-//    /// Adds a callback method which is called when ping message reception
-//    func onPing(_ data: ByteBuffer) -> Void
-//
-//    /// Adds a callback method which is called when client receieves pong
-//    func onPong(_ opcode: WebSocketOpcode, _ data: ByteBuffer ) -> Void
-//
-//    /// Adds a callback method which is called when connection fails to upgrade
-//    func upgradeFailed(_ channel: Channel) -> Void
-//}
-//
-//extension WebSocketClientDelegate {
-//    func connectionEstablished(_ channel: Channel) -> Void { }
-//
-//    func connectionClosed(_ channel: Channel, _ data: ByteBuffer) -> Void { }
-//
-//    func messageRecieved(_ data: ByteBuffer) -> Void { }
-//
-//    func onPing(_ data: ByteBuffer) -> Void { }
-//
-//    func onPong(_ opcode: WebSocketOpcode, _ data: ByteBuffer ) -> Void { }
-//
-//    func upgradeFailed(_ channel: Channel) -> Void { }
-//}
-//
-//// Dummy Websocket client delegate
-//class DummyDelegate: WebSocketClientDelegate {
-//}

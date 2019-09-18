@@ -85,6 +85,15 @@ class KituraTest: XCTestCase {
         }
     }
 
+    func createClient(negotiateCompression: Bool = false, uri: String = "/wstester" , contextTakeover: ContextTakeover = .both) -> WebSocketClient? {
+        guard let client = WebSocketClient(host: "localhost", port: 8080, uri: uri, requestKey: "test",
+                                           negotiateCompression: negotiateCompression ,contextTakeover: contextTakeover) else {
+            XCTFail("Unable to establish connection with the WebSocket server")
+            return nil
+        }
+        return client
+    }
+
     func sendUpgradeRequest(forProtocolVersion: String? = "13", toPath: String, usingKey: String?, semaphore: DispatchSemaphore, errorMessage: String? = nil, negotiateCompression: Bool = false, contextTakeover: ContextTakeover? = nil ) -> Channel? {
         self.httpHandler = HTTPResponseHandler(key: usingKey ?? "", semaphore: semaphore, errorMessage: errorMessage)
         let clientBootstrap = ClientBootstrap(group: MultiThreadedEventLoopGroup(numberOfThreads: 1))

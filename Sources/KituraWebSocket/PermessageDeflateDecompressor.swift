@@ -89,7 +89,7 @@ class PermessageDeflateDecompressor : ChannelInboundHandler {
         var inflatedPayload = inflatePayload(in: inputBuffer, allocator: context.channel.allocator)
 
         // Apply the WebSocket mask on the inflated payload
-        if let maskKey = frame.maskKey{
+        if let maskKey = frame.maskKey {
             inflatedPayload.webSocketMask(maskKey)
         }
 

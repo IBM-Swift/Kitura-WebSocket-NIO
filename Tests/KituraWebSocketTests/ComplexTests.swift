@@ -17,7 +17,6 @@
 import XCTest
 import Foundation
 import NIOWebSocket
-
 import LoggerAPI
 @testable import KituraWebSocket
 
@@ -50,29 +49,29 @@ class ComplexTests: KituraTest {
         var expectedFrame = bytes
         expectedFrame.append(contentsOf: mediumBinaryPayload)
         performServerTest(asyncTasks: { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: false)
-            _client?.sendMessage(raw: mediumBinaryPayload, opcode: .continuation, finalFrame: true, compressed: false)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getBytes(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: false)
+            _client.sendMessage(raw: mediumBinaryPayload, opcode: .continuation, finalFrame: true, compressed: false)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, expectedFrame, "The payload \(payload) doesn't equal the expected \(expectedFrame)")
                 expectation.fulfill()
             }
         }, { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
-            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: true)
-            _client?.sendMessage(raw: mediumBinaryPayload, opcode: .continuation, finalFrame: true, compressed: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getBytes(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: true)
+            _client.sendMessage(raw: mediumBinaryPayload, opcode: .continuation, finalFrame: true, compressed: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, expectedFrame, "The payload \(payload) doesn't equal the expected \(expectedFrame)")
                 expectation.fulfill()
             }
         }, { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
-            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: false)
-            _client?.sendMessage(raw: mediumBinaryPayload, opcode: .continuation, finalFrame: true, compressed: false)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getBytes(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: false)
+            _client.sendMessage(raw: mediumBinaryPayload, opcode: .continuation, finalFrame: true, compressed: false)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, expectedFrame, "The payload \(payload) doesn't equal the expected \(expectedFrame)")
                 expectation.fulfill()
             }
@@ -87,29 +86,29 @@ class ComplexTests: KituraTest {
         expectedBinaryPayload.append(contentsOf: bytes)
 
         performServerTest(asyncTasks: { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: false)
-            _client?.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getBytes(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: false)
+            _client.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, expectedBinaryPayload, "The payload \(payload) doesn't equal the expected \(expectedBinaryPayload)")
                 expectation.fulfill()
             }
         }, {expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
-            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: true)
-            _client?.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true, compressed: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getBytes(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: true)
+            _client.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true, compressed: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, expectedBinaryPayload, "The payload \(payload) doesn't equal the expected \(expectedBinaryPayload)")
                 expectation.fulfill()
             }
         }, { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
-            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: false)
-            _client?.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true, compressed: false)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getBytes(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: false)
+            _client.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true, compressed: false)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, expectedBinaryPayload, "The payload \(payload) doesn't equal the expected \(expectedBinaryPayload)")
                 expectation.fulfill()
             }
@@ -123,16 +122,16 @@ class ComplexTests: KituraTest {
             var expectedBinaryPayload = bytes
             expectedBinaryPayload.append(contentsOf: bytes)
             let pingPayload = "Testing, testing 1,2,3"
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: false)
-            _client?.sendMessage(raw: pingPayload, opcode: .ping, finalFrame: true)
-            _client?.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getBytes(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: false)
+            _client.sendMessage(raw: pingPayload, opcode: .ping, finalFrame: true)
+            _client.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, expectedBinaryPayload, "The payload \(payload) doesn't equal the expected \(expectedBinaryPayload)")
                 expectation.fulfill()
             }
-            _client?.onPong { opcode, _ in
+            _client.onPong { opcode, _ in
                 XCTAssertEqual(opcode, WebSocketOpcode.pong, "Recieved opcode \(opcode) doesn't equal expected \(WebSocketOpcode.pong)")
             }
 
@@ -148,16 +147,16 @@ class ComplexTests: KituraTest {
             var expectedPayload = text
             expectedPayload.append(contentsOf: text)
 
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: text, opcode: .text, finalFrame: false)
-            _client?.sendMessage(raw: pingPayload, opcode: .ping, finalFrame: true)
-            _client?.sendMessage(raw: text, opcode: .continuation, finalFrame: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getString(at: 0, length: recievedData.readableBytes)
-                XCTAssertEqual(payload, expectedPayload, "The payload \(recievedData) doesn't equal the expected \(expectedPayload)")
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: text, opcode: .text, finalFrame: false)
+            _client.sendMessage(raw: pingPayload, opcode: .ping, finalFrame: true)
+            _client.sendMessage(raw: text, opcode: .continuation, finalFrame: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)
+                XCTAssertEqual(payload, expectedPayload, "The payload \(receivedData) doesn't equal the expected \(expectedPayload)")
                 expectation.fulfill()
             }
-            _client?.onPong { opcode, _ in
+            _client.onPong { opcode, _ in
                 XCTAssertEqual(opcode, WebSocketOpcode.pong, "Recieved opcode \(opcode) doesn't equal expected \(WebSocketOpcode.pong)")
             }
         }
@@ -175,29 +174,29 @@ class ComplexTests: KituraTest {
         var textExpectedPayload = shortText
         textExpectedPayload.append(contentsOf: mediumText)
         performServerTest(asyncTasks: { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: shortText, opcode: .text, finalFrame: false)
-            _client?.sendMessage(raw: mediumText, opcode: .continuation, finalFrame: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getString(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: shortText, opcode: .text, finalFrame: false)
+            _client.sendMessage(raw: mediumText, opcode: .continuation, finalFrame: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
                 expectation.fulfill()
             }
         }, { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
-            _client?.sendMessage(raw: shortText, opcode: .text, finalFrame: false, compressed: true)
-            _client?.sendMessage(raw: mediumText, opcode: .continuation, finalFrame: true, compressed: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getString(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            _client.sendMessage(raw: shortText, opcode: .text, finalFrame: false, compressed: true)
+            _client.sendMessage(raw: mediumText, opcode: .continuation, finalFrame: true, compressed: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
                 expectation.fulfill()
             }
         }, { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
-            _client?.sendMessage(raw: shortText, opcode: .text, finalFrame: false)
-            _client?.sendMessage(raw: mediumText, opcode: .continuation, finalFrame: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getString(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            _client.sendMessage(raw: shortText, opcode: .text, finalFrame: false)
+            _client.sendMessage(raw: mediumText, opcode: .continuation, finalFrame: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
                 expectation.fulfill()
             }
@@ -211,29 +210,29 @@ class ComplexTests: KituraTest {
         var textExpectedPayload = text
         textExpectedPayload.append(contentsOf: text)
         performServerTest(asyncTasks: { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: text, opcode: .text, finalFrame: false)
-            _client?.sendMessage(raw: text, opcode: .continuation, finalFrame: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getString(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            _client.sendMessage(raw: text, opcode: .text, finalFrame: false)
+            _client.sendMessage(raw: text, opcode: .continuation, finalFrame: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
                 expectation.fulfill()
             }
         }, { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
-            _client?.sendMessage(raw: text, opcode: .text, finalFrame: false, compressed: true)
-            _client?.sendMessage(raw: text, opcode: .continuation, finalFrame: true, compressed: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getString(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            _client.sendMessage(raw: text, opcode: .text, finalFrame: false, compressed: true)
+            _client.sendMessage(raw: text, opcode: .continuation, finalFrame: true, compressed: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
                 expectation.fulfill()
             }
         }, { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test", negotiateCompression: true)
-            _client?.sendMessage(raw: text, opcode: .text, finalFrame: false)
-            _client?.sendMessage(raw: text, opcode: .continuation, finalFrame: true)
-            _client?.onMessage { recievedData in
-                let payload = recievedData.getString(at: 0, length: recievedData.readableBytes)!
+            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            _client.sendMessage(raw: text, opcode: .text, finalFrame: false)
+            _client.sendMessage(raw: text, opcode: .continuation, finalFrame: true)
+            _client.onMessage { receivedData in
+                let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
                 expectation.fulfill()
             }
@@ -246,14 +245,12 @@ class ComplexTests: KituraTest {
         let text = "RFC7692 specifies a framework for adding compression functionality to the WebSocket Protocol"
         performServerTest { expectation in
             var count = 0
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester",
-                                          requestKey: "test", negotiateCompression: true,
-                                          contextTakeover: contextTakeover)
-            _client?.sendMessage(raw: text, opcode: .text, finalFrame: true)
-            _client?.sendMessage(raw: text, opcode: .text, finalFrame: true)
-            _client?.onMessage { recievedData in
+            guard let _client = self.createClient(negotiateCompression: true, contextTakeover: contextTakeover) else { return }
+            _client.sendMessage(raw: text, opcode: .text, finalFrame: true)
+            _client.sendMessage(raw: text, opcode: .text, finalFrame: true)
+            _client.onMessage { receivedData in
                 count += 1
-                let payload = recievedData.getString(at: 0, length: recievedData.readableBytes)!
+                let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
                 XCTAssertEqual(payload, text, "The payload \(payload) doesn't equal the expected \(text)")
                 if count == 2 {
                     expectation.fulfill()

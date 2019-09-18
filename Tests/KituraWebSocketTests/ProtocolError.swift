@@ -47,10 +47,10 @@ class ProtocolErrorTests: KituraTest {
             let bytes:[UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
             let textPayload = "testing 1 2 3"
 
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester",requestKey: "test")
-            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: false)
-            _client?.sendMessage(raw: textPayload, opcode: .text, finalFrame: true, compressed: false)
-            _client?.onClose {channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: false)
+            _client.sendMessage(raw: textPayload, opcode: .text, finalFrame: true, compressed: false)
+            _client.onClose {channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("A text frame must be the first in the message")
@@ -65,9 +65,9 @@ class ProtocolErrorTests: KituraTest {
         register(closeReason: .protocolError)
         performServerTest { expectation in
             let oversizedPayload = [UInt8](repeating: 0x00, count: 126)
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: oversizedPayload, opcode: .ping, finalFrame: true, compressed: false)
-            _client?.onClose {channel, data  in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: oversizedPayload, opcode: .ping, finalFrame: true, compressed: false)
+            _client.onClose {channel, data  in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Control frames are only allowed to have payload up to and including 125 octets")
@@ -82,11 +82,11 @@ class ProtocolErrorTests: KituraTest {
         register(closeReason: .protocolError)
         performServerTest { expectation in
             let text = "Testing, testing 1, 2, 3. "
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: text, opcode: .ping, finalFrame: false, compressed: false)
-            _client?.sendMessage(raw: text, opcode: .continuation, finalFrame: false, compressed: false)
-            _client?.sendMessage(raw: text, opcode: .continuation, finalFrame: true, compressed: false)
-            _client?.onClose {channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: text, opcode: .ping, finalFrame: false, compressed: false)
+            _client.sendMessage(raw: text, opcode: .continuation, finalFrame: false, compressed: false)
+            _client.sendMessage(raw: text, opcode: .continuation, finalFrame: true, compressed: false)
+            _client.onClose {channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Control frames must not be fragmented")
@@ -100,9 +100,9 @@ class ProtocolErrorTests: KituraTest {
     func testInvalidOpCode() {
         register(closeReason: .protocolError)
         performServerTest { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: [0x00, 0x01], opcode: WebSocketOpcode(encodedWebSocketOpcode: 15)!, finalFrame: true)
-            _client?.onClose { channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: [0x00, 0x01], opcode: WebSocketOpcode(encodedWebSocketOpcode: 15)!, finalFrame: true)
+            _client.onClose { channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Parsed a frame with an invalid operation code of 15")
@@ -118,9 +118,9 @@ class ProtocolErrorTests: KituraTest {
         performServerTest { expectation in
             var closePayload = ByteBufferAllocator().buffer(capacity: 8)
                 closePayload.writeInteger(WebSocketCloseReasonCode.userDefined(2999).code())
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(data: closePayload, opcode: .connectionClose, finalFrame: true)
-            _client?.onClose {channel, frame in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(data: closePayload, opcode: .connectionClose, finalFrame: true)
+            _client.onClose {channel, frame in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 XCTAssertEqual(frame, expectedPayload, "The payload \(frame) doesn't equal the expected \(expectedPayload)")
@@ -134,9 +134,9 @@ class ProtocolErrorTests: KituraTest {
         register(closeReason: .protocolError)
         performServerTest { expectation in
             let oversizedPayload = [UInt8](repeating: 0x00, count: 126)
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: oversizedPayload, opcode: .connectionClose, finalFrame: true)
-            _client?.onClose {channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: oversizedPayload, opcode: .connectionClose, finalFrame: true)
+            _client.onClose {channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Control frames are only allowed to have payload up to and including 125 octets")
@@ -151,9 +151,9 @@ class ProtocolErrorTests: KituraTest {
         register(closeReason: .protocolError)
         performServerTest { expectation in
             let bytes:[UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
-            _client?.onClose {channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
+            _client.onClose {channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Continuation sent with prior binary or text frame")
@@ -168,9 +168,9 @@ class ProtocolErrorTests: KituraTest {
         register(closeReason: .protocolError)
         performServerTest { expectation in
             let bytes:[UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
-            _client?.onClose {channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
+            _client.onClose {channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Continuation sent with prior binary or text frame")
@@ -188,9 +188,9 @@ class ProtocolErrorTests: KituraTest {
             var payload = ByteBufferAllocator().buffer(capacity: 8)
             payload.writeInteger(WebSocketCloseReasonCode.normal.code())
             payload.writeBytes(testString.data(using: .utf16)!)
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(data: payload, opcode: .text, finalFrame: true)
-            _client?.onClose {channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(data: payload, opcode: .text, finalFrame: true)
+            _client.onClose {channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.invalidDataContents.code())
                 expectedPayload.writeString("Failed to convert received payload to UTF-8 String")
@@ -208,9 +208,9 @@ class ProtocolErrorTests: KituraTest {
             var payload = ByteBufferAllocator().buffer(capacity: 8)
             payload.writeInteger(WebSocketCloseReasonCode.normal.code())
             payload.writeBytes(testString.data(using: String.Encoding.utf16)!)
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(data: payload, opcode: .connectionClose, finalFrame: true)
-            _client?.onClose { channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(data: payload, opcode: .connectionClose, finalFrame: true)
+            _client.onClose { channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.invalidDataContents.code())
                 expectedPayload.writeString("Failed to convert received close message to UTF-8 String")
@@ -226,10 +226,10 @@ class ProtocolErrorTests: KituraTest {
         performServerTest { expectation in
             let textPayload = "testing 1 2 3"
             let bytes:[UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: textPayload, opcode: .text, finalFrame: false)
-            _client?.sendMessage(raw: bytes, opcode: .binary, finalFrame: true)
-            _client?.onClose {channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: textPayload, opcode: .text, finalFrame: false)
+            _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: true)
+            _client.onClose {channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("A binary frame must be the first in the message")
@@ -244,10 +244,10 @@ class ProtocolErrorTests: KituraTest {
         register(closeReason: .protocolError)
 
         performServerTest { expectation in
-            let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.maskFrame = false
-            _client?.sendMessage(raw: [0x00, 0x01], opcode: .binary, finalFrame: true)
-            _client?.onClose { channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.maskFrame = false
+            _client.sendMessage(raw: [0x00, 0x01], opcode: .binary, finalFrame: true)
+            _client.onClose { channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Received a frame from a client that wasn't masked")
@@ -261,9 +261,9 @@ class ProtocolErrorTests: KituraTest {
     func testInvalidRSVCode() {
         register(closeReason: .protocolError)
         performServerTest (asyncTasks: { expectation in
-            let _client =  WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test")
-            _client?.sendMessage(raw: [0x00, 0x01], opcode: .binary, finalFrame: true, compressed: true)
-            _client?.onClose { channel, data in
+            guard let _client = self.createClient() else { return }
+            _client.sendMessage(raw: [0x00, 0x01], opcode: .binary, finalFrame: true, compressed: true)
+            _client.onClose { channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("RSV1 must be 0 unless negotiated to define meaning for non-zero values")
