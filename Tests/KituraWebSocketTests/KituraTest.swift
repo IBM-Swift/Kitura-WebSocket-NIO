@@ -87,9 +87,11 @@ class KituraTest: XCTestCase {
 
     func createClient(negotiateCompression: Bool = false, uri: String = "/wstester" , contextTakeover: ContextTakeover = .both) -> WebSocketClient? {
         guard let client = WebSocketClient(host: "localhost", port: 8080, uri: uri, requestKey: "test",
-                                           negotiateCompression: negotiateCompression ,contextTakeover: contextTakeover) else {
-            XCTFail("Unable to establish connection with the WebSocket server")
-            return nil
+                                           negotiateCompression: negotiateCompression ,contextTakeover: contextTakeover) else { return nil }
+        do {
+            try client.makeConnection()
+        } catch let error {
+            print("error \(error)")
         }
         return client
     }
