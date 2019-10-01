@@ -73,11 +73,7 @@ class KituraTest: XCTestCase {
                       contextTakeover: ContextTakeover = .both, requestKey: String = "test") -> WebSocketClient? {
         guard let client = WebSocketClient(host: "localhost", port: 8080, uri: uri, requestKey: requestKey,
                                            negotiateCompression: negotiateCompression ,contextTakeover: contextTakeover) else { return nil }
-        do {
-            try client.makeConnection()
-        } catch let error {
-            print("error \(error)")
-        }
+        client.makeConnection()
         return client
     }
 

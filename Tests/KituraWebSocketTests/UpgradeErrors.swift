@@ -38,7 +38,7 @@ class UpgradeErrors: KituraTest {
                                "Server response status code \(String(describing: status?.code)) is not equal to \(String(describing: WebSocketClientError.webSocketUrlNotRegistered.code()))")
                 expectation.fulfill()
             }
-            try! _client.makeConnection()
+            _client.makeConnection()
         }
     }
 }

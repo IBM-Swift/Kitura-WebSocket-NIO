@@ -120,10 +120,9 @@ class ProtocolErrorTests: KituraTest {
             WebSocket.unregister(path: self.servicePath)
             guard let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test") else { return }
             _client.onError{ error,_  in
-                print(error)
                 expectation.fulfill()
             }
-            try! _client.makeConnection()
+            _client.makeConnection()
         }
     }
 

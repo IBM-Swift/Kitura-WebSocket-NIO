@@ -208,7 +208,7 @@ class BasicTests: KituraTest {
                                "Status \(String(describing: status)) returned from server is not equal to \(HTTPResponseStatus.badRequest)" )
                 expectation.fulfill()
             }
-            try! _client2.makeConnection()
+            _client2.makeConnection()
         }
     }
 

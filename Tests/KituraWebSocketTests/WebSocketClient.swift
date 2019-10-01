@@ -90,7 +90,7 @@ class WebSocketClient {
         return channel?.isActive ?? false
     }
 
-    public func makeConnection() throws {
+    public func makeConnection() {
         do {
             try connect()
         } catch {
@@ -329,7 +329,11 @@ class WebSocketClient {
     }
 
     fileprivate func disconnect()  {
-        try! self.group.syncShutdownGracefully()
+        do {
+            try self.group.syncShutdownGracefully()
+        } catch {
+            return
+        }
     }
 
 }
