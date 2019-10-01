@@ -44,14 +44,6 @@ class KituraTest: XCTestCase {
     let servicePathNoSlash = "wstester"
     let servicePath = "/wstester"
 
-    var httpRequestEncoder: HTTPRequestEncoder?
-
-    var httpResponseDecoder: ByteToMessageHandler<HTTPResponseDecoder>?
-
-    var httpHandler: HTTPResponseHandler?
-
-    var compressor: PermessageDeflateCompressor = PermessageDeflateCompressor()
-
     func performServerTest(line: Int = #line, asyncTasks: (XCTestExpectation) -> Void...) {
         let server = HTTP.createServer()
         server.allowPortReuse = true
@@ -77,16 +69,9 @@ class KituraTest: XCTestCase {
         }
     }
 
-    func clientChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
-        self.httpRequestEncoder = HTTPRequestEncoder()
-        self.httpResponseDecoder =  ByteToMessageHandler(HTTPResponseDecoder(leftOverBytesStrategy: .dropBytes))
-        return channel.pipeline.addHandlers(self.httpRequestEncoder!, self.httpResponseDecoder!, position: .last).flatMap {
-            channel.pipeline.addHandler(self.httpHandler!)
-        }
-    }
-
-    func createClient(negotiateCompression: Bool = false, uri: String = "/wstester" , contextTakeover: ContextTakeover = .both) -> WebSocketClient? {
-        guard let client = WebSocketClient(host: "localhost", port: 8080, uri: uri, requestKey: "test",
+    func createClient(negotiateCompression: Bool = false, uri: String = "/wstester" ,
+                      contextTakeover: ContextTakeover = .both, requestKey: String = "test") -> WebSocketClient? {
+        guard let client = WebSocketClient(host: "localhost", port: 8080, uri: uri, requestKey: requestKey,
                                            negotiateCompression: negotiateCompression ,contextTakeover: contextTakeover) else { return nil }
         do {
             try client.makeConnection()
@@ -94,62 +79,6 @@ class KituraTest: XCTestCase {
             print("error \(error)")
         }
         return client
-    }
-
-    func sendUpgradeRequest(forProtocolVersion: String? = "13", toPath: String, usingKey: String?, semaphore: DispatchSemaphore, errorMessage: String? = nil, negotiateCompression: Bool = false, contextTakeover: ContextTakeover? = nil ) -> Channel? {
-        self.httpHandler = HTTPResponseHandler(key: usingKey ?? "", semaphore: semaphore, errorMessage: errorMessage)
-        let clientBootstrap = ClientBootstrap(group: MultiThreadedEventLoopGroup(numberOfThreads: 1))
-            .channelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEPORT), value: 1)
-            .channelInitializer(clientChannelInitializer)
-
-        do {
-            let channel = try clientBootstrap.connect(host: "localhost", port: 8080).wait()
-            var request = HTTPRequestHead(version: HTTPVersion(major: 1, minor: 1), method: HTTPMethod(rawValue: "GET"), uri: toPath)
-            var headers = HTTPHeaders()
-            headers.add(name: "Host", value: "localhost:8080")
-            headers.add(name: "Upgrade", value: "websocket")
-            headers.add(name: "Connection", value: "Upgrade")
-            if let protocolVersion = forProtocolVersion {
-                headers.add(name: "Sec-WebSocket-Version", value: protocolVersion)
-            }
-            if let key = usingKey {
-                headers.add(name: "Sec-WebSocket-Key", value: key)
-            }
-            if negotiateCompression {
-                var value = "permessage-deflate"
-                if let contextTakeover = contextTakeover {
-                   value.append("; \(contextTakeover.header())")
-                }
-                headers.add(name: "Sec-WebSocket-Extensions", value: value)
-            }
-            request.headers = headers
-            channel.write(NIOAny(HTTPClientRequestPart.head(request)), promise: nil)
-            try channel.writeAndFlush(NIOAny(HTTPClientRequestPart.end(nil))).wait()
-            return channel
-        } catch let error {
-            Log.error("Error: \(error)")
-            XCTFail("Sending the upgrade request failed")
-            return nil
-        }
-    }
-
-    static func checkUpgradeResponse(_ httpStatusCode: HTTPStatusCode, _ secWebAccept: String, _ forKey: String) {
-        XCTAssertEqual(httpStatusCode, HTTPStatusCode.switchingProtocols,
-                       "Returned status code on upgrade request was \(httpStatusCode) and not \(HTTPStatusCode.switchingProtocols)")
-
-        let sha1 = Digest(using: .sha1)
-        let key: String = forKey + KituraTest.wsGUID
-        let sha1Bytes = sha1.update(string: key)!.final()
-        let sha1Data = NSData(bytes: sha1Bytes, length: sha1Bytes.count)
-        let secWebAcceptExpected = sha1Data.base64EncodedString(options: .lineLength64Characters)
-
-        XCTAssertEqual(secWebAccept, secWebAcceptExpected,
-                       "The Sec-WebSocket-Accept header value was [\(secWebAccept)] and not the expected value of [\(secWebAcceptExpected)]")
-    }
-
-    static func checkUpgradeFailureResponse(_ httpStatusCode: HTTPStatusCode, _ errorMessage: String) {
-        XCTAssertEqual(httpStatusCode, HTTPStatusCode.badRequest,
-                       "Returned status code on upgrade request was \(httpStatusCode) and not \(HTTPStatusCode.badRequest)")
     }
 
     func expectation(line: Int, index: Int) -> XCTestExpectation {
@@ -162,50 +91,8 @@ class KituraTest: XCTestCase {
     }
 }
 
-class HTTPResponseHandler: ChannelInboundHandler {
-
-    public typealias InboundIn = HTTPClientResponsePart
-
-    let errorMessage: String?
-
-    let key: String
-
-    let upgradeDoneOrRefused: DispatchSemaphore
-
-    public init(key: String, semaphore: DispatchSemaphore, errorMessage: String? = nil) {
-        self.key = key
-        self.upgradeDoneOrRefused = semaphore
-        self.errorMessage = errorMessage
-    }
-
-    func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        let response = self.unwrapInboundIn(data)
-        switch response {
-        case .head(let header):
-            let statusCode = HTTPStatusCode(rawValue: Int(header.status.code))!
-            let secWebSocketAccept = header.headers["Sec-WebSocket-Accept"]
-            if let errorMessage = errorMessage {
-                KituraTest.checkUpgradeFailureResponse(statusCode, errorMessage)
-            } else {
-                XCTAssertEqual(secWebSocketAccept.count, 1, "Upgrade to WebSocket failed")
-                if secWebSocketAccept.count > 0 {
-                    KituraTest.checkUpgradeResponse(statusCode, secWebSocketAccept[0], key)
-                    upgradeDoneOrRefused.signal()
-                }
-            }
-        case .body(let buffer):
-            XCTAssertEqual(buffer.getString(at: 0, length: buffer.readableBytes) ?? "", errorMessage ?? "No error message")
-            upgradeDoneOrRefused.signal()
-        default: break
-        }
-    }
-}
-
 extension Bool {
     mutating func toggle() {
         self = !self
     }
 }
-
-// We'd want to able to remove HTTPResponseHandler by hand, following a successful upgrade to WebSocket
-extension HTTPResponseHandler: RemovableChannelHandler { }

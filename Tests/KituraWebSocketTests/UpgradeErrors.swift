@@ -25,52 +25,20 @@ class UpgradeErrors: KituraTest {
 
     static var allTests: [(String, (UpgradeErrors) -> () throws -> Void)] {
         return [
-            ("testNoSecWebSocketKey", testNoSecWebSocketKey),
-            ("testNoSecWebSocketVersion", testNoSecWebSocketVersion),
             ("testNoService", testNoService)
         ]
     }
 
-    func testNoSecWebSocketKey() {
-        WebSocket.factory.clear()
-
-        performServerTest { expectation in
-            let upgradeFailed = DispatchSemaphore(value: 0)
-            let message = "Sec-WebSocket-Key header missing in the upgrade request"
-            guard let _ = self.sendUpgradeRequest(forProtocolVersion: "13", toPath: "/testing123", usingKey: nil, semaphore: upgradeFailed,
-                errorMessage: message) else { return }
-            upgradeFailed.wait()
-            expectation.fulfill()
-        }
-    }
-
-    func testNoSecWebSocketVersion() {
-        WebSocket.factory.clear()
-
-        performServerTest(asyncTasks: { expectation in
-            let upgradeFailed = DispatchSemaphore(value: 0)
-            let message = "Sec-WebSocket-Version header missing in the upgrade request"
-            guard let _ = self.sendUpgradeRequest(forProtocolVersion: nil, toPath: "/testing123", usingKey: self.secWebKey, semaphore: upgradeFailed, errorMessage: message) else { return }
-            upgradeFailed.wait()
-            expectation.fulfill()
-        }, { expectation in
-            let upgradeFailed = DispatchSemaphore(value: 0)
-            let message = "Only WebSocket protocol version 13 is supported"
-            guard let _ = self.sendUpgradeRequest(forProtocolVersion: "12", toPath: "/testing123", usingKey: self.secWebKey, semaphore: upgradeFailed, errorMessage: message) else { return }
-            upgradeFailed.wait()
-            expectation.fulfill()
-        })
-    }
-
     func testNoService() {
         WebSocket.factory.clear()
-
         performServerTest { expectation in
-            let upgradeFailed = DispatchSemaphore(value: 0)
-            let errorMessage = "No service has been registered for the path /testing123"
-            guard let _ = self.sendUpgradeRequest(forProtocolVersion: "13", toPath: "/testing123", usingKey: self.secWebKey, semaphore: upgradeFailed, errorMessage: errorMessage) else { return }
-            upgradeFailed.wait()
-            expectation.fulfill()
+            guard let _client = WebSocketClient(host: "localhost", port: 8080, uri: self.servicePath, requestKey: self.secWebKey) else { return }
+            _client.onError { error, status in
+                XCTAssertEqual(status?.code, WebSocketClientError.badRequest.code(),
+                               "Server response status code \(String(describing: status?.code)) is not equal to \(String(describing: WebSocketClientError.webSocketUrlNotRegistered.code()))")
+                expectation.fulfill()
+            }
+            try! _client.makeConnection()
         }
     }
 }

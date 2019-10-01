@@ -19,6 +19,7 @@ import Foundation
 import Dispatch
 import NIO
 import NIOWebSocket
+import NIOHTTP1
 
 import LoggerAPI
 @testable import KituraWebSocket
@@ -56,21 +57,21 @@ class BasicTests: KituraTest {
         var payloadBuffer = ByteBufferAllocator().buffer(capacity: 16)
         payloadBuffer.writeBytes(bytes)
         performServerTest(asyncTasks: { expectation in
-            guard let _client = self.createClient() else { return }
+            guard let _client = self.createClient(requestKey: self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
                 XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
                 expectation.fulfill()
             }
         }, { expectation in
-            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.sendMessage(raw: bytes, compressed: true)
             _client.onMessage { receivedData in
                 XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
                 expectation.fulfill()
             }
         }, { expectation in
-            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
                 XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
@@ -89,21 +90,21 @@ class BasicTests: KituraTest {
         payloadBuffer.writeBytes(bytes)
 
         performServerTest(asyncTasks: { expectation in
-            guard let _client = self.createClient() else { return }
+            guard let _client = self.createClient(requestKey: self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
                 XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
                 expectation.fulfill()
             }
         }, { expectation in
-            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.sendMessage(raw: bytes, compressed: true)
             _client.onMessage { receivedData in
                 XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
                 expectation.fulfill()
             }
         }, { expectation in
-            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            guard let _client = self.createClient(negotiateCompression: true, requestKey:self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
                 XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
@@ -119,21 +120,21 @@ class BasicTests: KituraTest {
         payloadBuffer.writeBytes(bytes)
 
         performServerTest(asyncTasks: { expectation in
-            guard let _client = self.createClient() else { return }
+            guard let _client = self.createClient(requestKey: self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
                 XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
                 expectation.fulfill()
             }
         }, {expectation in
-            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.sendMessage(raw: bytes, compressed: true)
             _client.onMessage { receivedData in
                 XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
                 expectation.fulfill()
             }
         }, { expectation in
-            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
                 XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
@@ -147,7 +148,7 @@ class BasicTests: KituraTest {
         performServerTest { expectation in
             var payloadBuffer = ByteBufferAllocator().buffer(capacity: 8)
             payloadBuffer.writeInteger(WebSocketCloseReasonCode.normal.code())
-            guard let _client = self.createClient() else { return }
+            guard let _client = self.createClient(requestKey: self.secWebKey) else { return }
             _client.sendMessage(data: payloadBuffer, opcode: .connectionClose, finalFrame: true, compressed: false)
             _client.onClose { channel, _ in
                 _ = channel.close()
@@ -159,7 +160,7 @@ class BasicTests: KituraTest {
     func testPing() {
         register(closeReason: .noReasonCodeSent)
         performServerTest { expectation in
-            guard let _client = self.createClient(negotiateCompression: true) else { return }
+            guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.ping()
             _client.onPong { code, _ in
                 XCTAssertEqual(code, WebSocketOpcode.pong, "Recieved opcode \(code) doesn't equal expected \(WebSocketOpcode.pong)")
@@ -173,7 +174,7 @@ class BasicTests: KituraTest {
         performServerTest { expectation in
             var payloadBuffer = ByteBufferAllocator().buffer(capacity: 8)
             payloadBuffer.writeString("Testing, testing 1,2,3")
-            guard let _client = self.createClient() else { return }
+            guard let _client = self.createClient(requestKey: self.secWebKey) else { return }
             _client.sendMessage(data: payloadBuffer, opcode: .ping, finalFrame: true, compressed: false)
             _client.onPong { code, data in
                 XCTAssertEqual(code, WebSocketOpcode.pong, "Recieved opcode \(code) doesn't equal expected \(WebSocketOpcode.pong)")
@@ -187,9 +188,7 @@ class BasicTests: KituraTest {
         register(closeReason: .noReasonCodeSent, testServerRequest: true)
 
         performServerTest { expectation in
-            let connected = DispatchSemaphore(value: 0)
-            guard self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: connected) != nil else { return }
-            connected.wait()
+            guard self.createClient() != nil else { return }
 
             sleep(3)       // Wait a bit for the WebSocketService to test the ServerRequest
 
@@ -199,33 +198,33 @@ class BasicTests: KituraTest {
 
     func testSuccessfulRemove() {
         register(closeReason: .noReasonCodeSent)
-
         performServerTest { expectation in
-            let upgraded = DispatchSemaphore(value: 0)
-            guard self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgraded) != nil else { return }
-            upgraded.wait()
+            guard let _client1 = self.createClient() else { return }
+            XCTAssertTrue(_client1.isConnected, "Client not connected")
             WebSocket.unregister(path: self.servicePath)
-            let upgradeFailed = DispatchSemaphore(value: 0)
-            guard self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgradeFailed, errorMessage: "No service has been registered for the path /wstester") != nil else { return }
-            upgradeFailed.wait()
-            expectation.fulfill()
+            guard let _client2 = WebSocketClient(host: "localhost", port: 8080, uri: self.servicePath, requestKey: "test") else { return }
+            _client2.onError { _, status in
+                XCTAssertEqual(status, HTTPResponseStatus.badRequest,
+                               "Status \(String(describing: status)) returned from server is not equal to \(HTTPResponseStatus.badRequest)" )
+                expectation.fulfill()
+            }
+            try! _client2.makeConnection()
         }
     }
 
     func testSuccessfulUpgrade() {
         register(closeReason: .noReasonCodeSent) //with NIOWebSocket, the Websocket handler cannot be added to a listening server
         performServerTest(asyncTasks: { expectation in
-            self.register(closeReason: .noReasonCodeSent)
-            let upgraded = DispatchSemaphore(value: 0)
-            guard self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgraded) != nil else { return }
-            upgraded.wait()
-            expectation.fulfill()
-        }, { expectation in
-            let upgraded = DispatchSemaphore(value: 0)
             WebSocket.unregister(path: self.servicePathNoSlash)
             self.register(onPath: self.servicePathNoSlash, closeReason: .noReasonCodeSent)
-            guard self.sendUpgradeRequest(toPath: self.servicePath, usingKey: self.secWebKey, semaphore: upgraded) != nil else { return }
-            upgraded.wait()
+            guard let _client = self.createClient(uri: self.servicePath) else { return }
+            XCTAssertTrue(_client.isConnected, "WebSocket Upgrade failed")
+            expectation.fulfill()
+        }, { expectation in
+            WebSocket.unregister(path: self.servicePath)
+            self.register(onPath: self.servicePath, closeReason: .noReasonCodeSent)
+            guard let _client = self.createClient(uri: self.servicePath) else { return }
+            XCTAssertTrue(_client.isConnected, "WebSocket Upgrade failed")
             expectation.fulfill()
         })
     }
