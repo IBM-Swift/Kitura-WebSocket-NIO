@@ -337,6 +337,27 @@ class BasicTests: KituraTest {
         })
     }
 
+    func testWithStruct() {
+        register(closeReason: .noReasonCodeSent)
+        performServerTest(asyncTasks: { expectation in
+            struct structure: Codable, Equatable {
+                var name: String = ""
+                var age: Int = 0
+            }
+            var textPayload = structure()
+            textPayload.name = "Hello"
+            textPayload.age = 12
+            guard let _client = self.createClient(uri: "/wstester") else { return }
+            _client.sendMessage(model: textPayload)
+            _client.onMessage { recieved in
+                let jsonDecoder = JSONDecoder()
+                let structur = try! jsonDecoder.decode(structure.self, from: recieved.getData(at: 0, length: recieved.readableBytes)!)
+                XCTAssertEqual(structur, textPayload, "The payload \(structur) doesn't equal \(textPayload)")
+                expectation.fulfill()
+            }
+        })
+    }
+
     func testUserDefinedCloseCode() {
         register(closeReason: .userDefined(65535))
         performServerTest { expectation in

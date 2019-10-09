@@ -29,7 +29,6 @@ class ProtocolErrorTests: KituraTest {
             ("testPingWithOversizedPayload", testPingWithOversizedPayload),
             ("testFragmentedPing", testFragmentedPing),
             ("testInvalidOpCode", testInvalidOpCode),
-            ("testUpgradeError", testUpgradeError),
             ("testInvalidUserCloseCode", testInvalidUserCloseCode),
             ("testCloseWithOversizedPayload", testCloseWithOversizedPayload),
             ("testJustContinuationFrame", testJustContinuationFrame),
@@ -111,18 +110,6 @@ class ProtocolErrorTests: KituraTest {
                 _ = channel.close()
                 expectation.fulfill()
             }
-        }
-    }
-
-    func testUpgradeError() {
-        register(closeReason: .noReasonCodeSent)
-        performServerTest { expectation in
-            WebSocket.unregister(path: self.servicePath)
-            guard let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: "test") else { return }
-            _client.onError{ error,_  in
-                expectation.fulfill()
-            }
-            _client.makeConnection()
         }
     }
 

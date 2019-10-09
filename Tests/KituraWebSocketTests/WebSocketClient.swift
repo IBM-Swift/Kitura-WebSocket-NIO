@@ -28,7 +28,7 @@ import XCTest
 
 class WebSocketClient {
 
-    let requestKey: String?
+    let requestKey: String
     let host: String
     let port: Int
     let uri: String
@@ -67,7 +67,7 @@ class WebSocketClient {
     ///     - maxFrameSize : Maximum allowable frame size of WebSocket client is configured using this parameter.
     ///                      Default value is `14`.
 
-    public init?(host: String, port: Int, uri: String, requestKey: String?,
+    public init?(host: String, port: Int, uri: String, requestKey: String,
                  negotiateCompression: Bool = false, maxWindowBits: Int32 = 15,
                  contextTakeover: ContextTakeover = .both, maxFrameSize: Int = 24, onOpen: @escaping (Channel?) -> Void = { _ in }) {
         self.requestKey = requestKey
@@ -198,6 +198,20 @@ class WebSocketClient {
         sendMessage(data: buffer, opcode: opcode, finalFrame: finalFrame, compressed: compressed)
     }
 
+    public func sendMessage<T>(model: T, opcode: WebSocketOpcode = .text, finalFrame: Bool = true, compressed: Bool = false) where T: Codable {
+        let jsonEncoder = JSONEncoder()
+        do {
+            let jsonData = try jsonEncoder.encode(model)
+            let string = String(data: jsonData, encoding: .utf8)!
+            print("String:",string)
+            var buffer = ByteBufferAllocator().buffer(capacity: string.count)
+            buffer.writeString(string)
+            sendMessage(data: buffer, opcode: opcode, finalFrame: finalFrame, compressed: compressed)
+        } catch let error{
+            print(error)
+        }
+    }
+
     /// This function sends IOData(ByteBuffer) to the connected server
     ///
     ///             _client.sendMessage(data: byteBuffer, opcode: opcode)
@@ -229,7 +243,7 @@ class WebSocketClient {
 
     private func clientChannelInitializer(channel: Channel) -> EventLoopFuture<Void> {
         let httpHandler = HTTPClientHandler(client: self)
-        let basicUpgrader = NIOWebClientSocketUpgrader(requestKey: self.requestKey ?? "" , maxFrameSize: 1 << self.maxFrameSize,
+        let basicUpgrader = NIOWebClientSocketUpgrader(requestKey: self.requestKey, maxFrameSize: 1 << self.maxFrameSize,
                                                        automaticErrorHandling: false, upgradePipelineHandler: self.upgradePipelineHandler)
         let config: NIOHTTPClientUpgradeConfiguration = (upgraders: [basicUpgrader], completionHandler: { context in
             context.channel.pipeline.removeHandler(httpHandler, promise: nil)})
@@ -379,7 +393,7 @@ class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
             }
             if frame.fin {
                 if let delegate = client.delegate {
-                    delegate.messageRecieved(data: data)
+                    delegate.messageRecieved(data: buffer)
                 } else {
                     client.onMessageCallback(buffer)
                 }
@@ -527,8 +541,6 @@ enum WebSocketClientError: UInt, Error {
             return 404
         case .badRequest :
             return 400
-        default :
-            return nil
         }
     }
 }
