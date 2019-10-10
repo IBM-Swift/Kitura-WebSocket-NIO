@@ -340,20 +340,24 @@ class BasicTests: KituraTest {
     func testWithStruct() {
         register(closeReason: .noReasonCodeSent)
         performServerTest(asyncTasks: { expectation in
-            struct structure: Codable, Equatable {
+            struct Details: Codable, Equatable {
                 var name: String = ""
                 var age: Int = 0
             }
-            var textPayload = structure()
+            var textPayload = Details()
             textPayload.name = "Hello"
             textPayload.age = 12
             guard let _client = self.createClient(uri: "/wstester") else { return }
             _client.sendMessage(model: textPayload)
             _client.onMessage { recieved in
                 let jsonDecoder = JSONDecoder()
-                let structur = try! jsonDecoder.decode(structure.self, from: recieved.getData(at: 0, length: recieved.readableBytes)!)
-                XCTAssertEqual(structur, textPayload, "The payload \(structur) doesn't equal \(textPayload)")
-                expectation.fulfill()
+                do {
+                    let recievedDetails = try jsonDecoder.decode(Details.self, from: recieved.getData(at: 0, length: recieved.readableBytes)!)
+                    XCTAssertEqual(recievedDetails, textPayload, "The payload \(recievedDetails) doesn't equal \(textPayload)")
+                    expectation.fulfill()
+                } catch {
+                    print(error)
+                }
             }
         })
     }
