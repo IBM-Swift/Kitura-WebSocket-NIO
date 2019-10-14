@@ -103,7 +103,7 @@ class TestWebSocketService: WebSocketService {
 
     public func disconnected(connection: WebSocketConnection, reason: WebSocketCloseReasonCode) {
         XCTAssertEqual(connectionId, connection.id, "Client ID from connect wasn't client ID from disconnect")
-        XCTAssertEqual(Int(closeReason.code()), Int(reason.code()), "Expected close reason code of \(closeReason) received \(reason)")
+        XCTAssertEqual(Int(closeReason.code()), Int(reason.code()), "Expected close reason code \(closeReason) is not equal to received reason code\(reason)")
     }
 
     public func received(message: Data, from: WebSocketConnection) {

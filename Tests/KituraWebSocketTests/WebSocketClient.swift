@@ -38,34 +38,34 @@ class WebSocketClient {
     public var contextTakeover: ContextTakeover
     public var maxFrameSize: Int
 
-    ///  This semaphore signals when the client successfully recieves the Connection upgrade response from remote server
-    ///  Ensures that webSocket frames are sent on channel only after the connection is successfully upgraded to WebSocket Connection
+    //  This semaphore signals when the client successfully recieves the Connection upgrade response from remote server
+    //  Ensures that webSocket frames are sent on channel only after the connection is successfully upgraded to WebSocket Connection
 
     let upgraded = DispatchSemaphore(value: 0)
 
-    /// Create a new `WebSocketClient`.
-    ///
-    ///
-    ///         Example usage:
-    ///             let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/", requestKey: "test")
-    ///
-    ///         // See RFC 7692 for to know more about compression negotiation
-    ///         Example usage with compression enabled:
-    ///             let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/", requestKey: "test", negotiateCompression: true)
-    ///
-    /// - parameters:
-    ///     - host: Host name of the remote server
-    ///     - port: Port number on which the remote server is listening
-    ///     - uri : The "Request-URI" of the GET method, it is used to identify theendpoint of the WebSocket connection
-    ///     - requestKey: The requestKey sent by client which server has to include while building it's response. This helps ensure that the server
-    ///                   does not accept connections from non-WebSocket clients
-    ///     - negotiateCompression: Parameter to negotiate compression. Settimg this parameter to `true` adds the Headers neccesary for negotiating compression
-    ///                              with server while building the upgrade request. This parameter is set to `false` by default.
-    ///     - maxWindowbits: Size of the LZ77 sliding window used in compression. valid values are between 8..15 bits.
-    ///                      An endpoint is by default configured with value of 15.
-    ///     - contextTakeover: Parameter to configure the Context Takeover of the WebSocket Connection.
-    ///     - maxFrameSize : Maximum allowable frame size of WebSocket client is configured using this parameter.
-    ///                      Default value is `14`.
+    // Create a new `WebSocketClient`.
+    //
+    //
+    //         Example usage:
+    //             let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/", requestKey: "test")
+    //
+    //         // See RFC 7692 for to know more about compression negotiation
+    //         Example usage with compression enabled:
+    //             let _client = WebSocketClient(host: "localhost", port: 8080, uri: "/", requestKey: "test", negotiateCompression: true)
+    //
+    // - parameters:
+    //     - host: Host name of the remote server
+    //     - port: Port number on which the remote server is listening
+    //     - uri : The "Request-URI" of the GET method, it is used to identify theendpoint of the WebSocket connection
+    //     - requestKey: The requestKey sent by client which server has to include while building it's response. This helps ensure that the server
+    //                   does not accept connections from non-WebSocket clients
+    //     - negotiateCompression: Parameter to negotiate compression. Settimg this parameter to `true` adds the Headers neccesary for negotiating compression
+    //                              with server while building the upgrade request. This parameter is set to `false` by default.
+    //     - maxWindowbits: Size of the LZ77 sliding window used in compression. valid values are between 8..15 bits.
+    //                      An endpoint is by default configured with value of 15.
+    //     - contextTakeover: Parameter to configure the Context Takeover of the WebSocket Connection.
+    //     - maxFrameSize : Maximum allowable frame size of WebSocket client is configured using this parameter.
+    //                      Default value is `14`.
 
     public init?(host: String, port: Int, uri: String, requestKey: String,
                  negotiateCompression: Bool = false, maxWindowBits: Int32 = 15,
@@ -102,45 +102,45 @@ class WebSocketClient {
     //  Decides whether the websocket frame sent has to be masked or not
     public var maskFrame: Bool = true
 
-    /// This function pings to the connected server
-    ///
-    ///             _client.ping()
-    ///
-    /// - parameters:
-    ///     - data: ping frame payload, must be less than 125 bytes
+    // This function pings to the connected server
+    //
+    //             client.ping()
+    //
+    // - parameters:
+    //     - data: ping frame payload, must be less than 125 bytes
 
     public func ping(data: ByteBuffer = ByteBufferAllocator().buffer(capacity: 0)) {
         sendMessage(data: data, opcode: .ping)
     }
 
-    /// This function pong frame to the connected server
-    ///
-    ///             _client.pong()
-    ///
-    /// - parameters:
-    ///     - data: frame payload, must be less than 125 bytes
+    // This function pong frame to the connected server
+    //
+    //             client.pong()
+    //
+    // - parameters:
+    //     - data: frame payload, must be less than 125 bytes
 
     public func pong(data: ByteBuffer = ByteBufferAllocator().buffer(capacity: 0)) {
         sendMessage(data: data, opcode: .pong)
     }
 
-    /// This function close to the connected server
-    ///
-    ///             _client.close()
-    ///
-    /// - parameters:
-    ///     - data: close frame payload, must be less than 125 bytes
+    // This function close to the connected server
+    //
+    //             client.close()
+    //
+    // - parameters:
+    //     - data: close frame payload, must be less than 125 bytes
 
     public func close(data: ByteBuffer = ByteBufferAllocator().buffer(capacity: 0)) {
         sendMessage(data: data, opcode: .connectionClose)
     }
 
-    /// This function sends text-formatted data to the connected server
-    ///
-    ///             _client.sendMessage("Hello World")
-    ///
-    /// - parameter:
-    ///     - `text`: Text-formatted data to be sent to the connected server
+    // This function sends text-formatted data to the connected server
+    //
+    //             client.sendMessage("Hello World")
+    //
+    // - parameter:
+    //     - `text`: Text-formatted data to be sent to the connected server
 
     public func sendMessage(_ string: String) {
         var buffer = ByteBufferAllocator().buffer(capacity: string.count)
@@ -148,28 +148,28 @@ class WebSocketClient {
         sendMessage(data: buffer, opcode: .text)
     }
 
-    /// This function sends text-formatted data to the connected server
-    ///
-    ///             _client.sendMessage([0x11,0x12])
-    ///
-    /// - parameter:
-    ///     - `binary`: binary-formatted data to be sent to the connected server
+    // This function sends text-formatted data to the connected server
+    //
+    //             client.sendMessage([0x11,0x12])
+    //
+    // - parameter:
+    //     - `binary`: binary-formatted data to be sent to the connected server
 
     public func sendMessage(_ binary: [UInt8]) {
         sendMessage(raw: binary, opcode: .binary)
     }
 
-    /// This function sends binary-formatted data to the connected server in multiple frames
-    ///
-    ///             // server recieves [0x11 ,0x12, 0x13] when following is sent
-    ///             _client.sendMessage(raw: [0x11,0x12], opcode: .binary, finalFrame: false)
-    ///             _client.sendMessage(raw: [0x13], opcode: .continuation, finalFrame: true)
-    ///
-    /// - parameters:
-    ///     - raw: raw binary data to be sent in the frame
-    ///     - opcode: Websocket opcode indicating type of the frame
-    ///     - finalframe: Whether the frame to be sent is the last one, by default this is set to `true`
-    ///     - compressed: Whether to compress the current frame to be sent, by default compression is disabled
+    // This function sends binary-formatted data to the connected server in multiple frames
+    //
+    //             // server recieves [0x11 ,0x12, 0x13] when following is sent
+    //             client.sendMessage(raw: [0x11,0x12], opcode: .binary, finalFrame: false)
+    //             client.sendMessage(raw: [0x13], opcode: .continuation, finalFrame: true)
+    //
+    // - parameters:
+    //     - raw: raw binary data to be sent in the frame
+    //     - opcode: Websocket opcode indicating type of the frame
+    //     - finalframe: Whether the frame to be sent is the last one, by default this is set to `true`
+    //     - compressed: Whether to compress the current frame to be sent, by default compression is disabled
 
     public func sendMessage<T>(raw binary: T, opcode: WebSocketOpcode = .binary, finalFrame: Bool = true, compressed: Bool = false)
         where T: Collection, T.Element == UInt8 {
@@ -178,17 +178,17 @@ class WebSocketClient {
         sendMessage(data: buffer, opcode: opcode, finalFrame: finalFrame, compressed: compressed)
     }
 
-    /// This function sends text-formatted data to the connected server in multiple frames
-    ///
-    ///             // server recieves "Kitura-WebSocket-NIO" when following is sent
-    ///             _client.sendMessage(raw: "Kitura-WebSocket", opcode: .text, finalFrame: false)
-    ///             _client.sendMessage(raw: "-NIO", opcode: .continuation, finalFrame: true)
-    ///
-    /// - parameters:
-    ///     - raw: raw text to be sent in the frame
-    ///     - opcode: Websocket opcode indicating type of the frame
-    ///     - finalframe: Whether the frame to be sent is the last one, by default this is set to `true`
-    ///     - compressed: Whether to compress the current frame to be sent, by default this set to `false`
+    // This function sends text-formatted data to the connected server in multiple frames
+    //
+    //             // server recieves "Kitura-WebSocket-NIO" when following is sent
+    //             client.sendMessage(raw: "Kitura-WebSocket", opcode: .text, finalFrame: false)
+    //             client.sendMessage(raw: "-NIO", opcode: .continuation, finalFrame: true)
+    //
+    // - parameters:
+    //     - raw: raw text to be sent in the frame
+    //     - opcode: Websocket opcode indicating type of the frame
+    //     - finalframe: Whether the frame to be sent is the last one, by default this is set to `true`
+    //     - compressed: Whether to compress the current frame to be sent, by default this set to `false`
 
     public func sendMessage<T>(raw data: T, opcode: WebSocketOpcode = .text, finalFrame: Bool = true, compressed: Bool = false)
         where T: Collection, T.Element == Character {
@@ -212,15 +212,15 @@ class WebSocketClient {
         }
     }
 
-    /// This function sends IOData(ByteBuffer) to the connected server
-    ///
-    ///             _client.sendMessage(data: byteBuffer, opcode: opcode)
-    ///
-    /// - parameters:
-    ///     - data: ByteBuffer-formatted to be sent in the frame
-    ///     - opcode: Websocket opcode indicating type of the frame
-    ///     - finalframe: Whether the frame to be sent is the last one, by default this is set to `true`
-    ///     - compressed: Whether to compress the current frame to be sent, by default this set to `false`
+    // This function sends IOData(ByteBuffer) to the connected server
+    //
+    //             client.sendMessage(data: byteBuffer, opcode: opcode)
+    //
+    // - parameters:
+    //     - data: ByteBuffer-formatted to be sent in the frame
+    //     - opcode: Websocket opcode indicating type of the frame
+    //     - finalframe: Whether the frame to be sent is the last one, by default this is set to `true`
+    //     - compressed: Whether to compress the current frame to be sent, by default this set to `false`
 
     public func sendMessage(data: ByteBuffer, opcode: WebSocketOpcode, finalFrame: Bool = true, compressed: Bool = false) {
         send(data: data, opcode: opcode, finalFrame: finalFrame, compressed: compressed)
@@ -301,18 +301,18 @@ class WebSocketClient {
     var onErrorCallBack: (Error?, HTTPResponseStatus?) -> Void = { _,_  in }
 
     // callback functions
-    /// These functions are called when client gets reply from another endpoint
-    ///
-    ///     Example usage:
-    ///         Consider an endpoint sending data, callback function onMessage is triggered
-    ///         and receieved data is available as bytebuffer
-    ///
-    ///         _client.onMessage { receivedData in  // receieved byteBuffer
-    ///                    // do something with recieved ByteBuffer
-    ///                 }
-    ///
-    /// Other callback functions are used similarly.
-    ///
+    // These functions are called when client gets reply from another endpoint
+    //
+    //     Example usage:
+    //         Consider an endpoint sending data, callback function onMessage is triggered
+    //         and receieved data is available as bytebuffer
+    //
+    //         client.onMessage { receivedData in  // receieved byteBuffer
+    //                    // do something with recieved ByteBuffer
+    //                 }
+    //
+    // Other callback functions are used similarly.
+    //
 
     public func onMessage(_ callback: @escaping (ByteBuffer) -> Void) {
         executeOnEventLoop { self.onMessageCallback = callback }
@@ -349,7 +349,6 @@ class WebSocketClient {
             return
         }
     }
-
 }
 
 class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
@@ -503,9 +502,9 @@ extension HTTPVersion {
     static let http11 = HTTPVersion(major: 1, minor: 1)
 }
 
-///  This enum is used to populate 'Sec-WebSocket-Extension' field of upgrade header with user required ContextTakeover configuration
-///  User specifies the the context Takeover configuration when creating the WebSocketClient
-///  when not specified both the client and server connections are context takeover enabled
+//  This enum is used to populate 'Sec-WebSocket-Extension' field of upgrade header with user required ContextTakeover configuration
+//  User specifies the the context Takeover configuration when creating the WebSocketClient
+//  when not specified both the client and server connections are context takeover enabled
 
 enum ContextTakeover {
     case none

@@ -54,7 +54,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: mediumBinaryPayload, opcode: .continuation, finalFrame: true, compressed: false)
             _client.onMessage { receivedData in
                 let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, expectedFrame, "The payload \(payload) doesn't equal the expected \(expectedFrame)")
+                XCTAssertEqual(payload, expectedFrame, "The payload recieved \(payload) is not equal to expected payload \(expectedFrame).")
                 expectation.fulfill()
             }
         }, { expectation in
@@ -63,7 +63,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: mediumBinaryPayload, opcode: .continuation, finalFrame: true, compressed: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, expectedFrame, "The payload \(payload) doesn't equal the expected \(expectedFrame)")
+                XCTAssertEqual(payload, expectedFrame, "The payload recieved \(payload) is not equal to expected payload \(expectedFrame).")
                 expectation.fulfill()
             }
         }, { expectation in
@@ -72,7 +72,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: mediumBinaryPayload, opcode: .continuation, finalFrame: true, compressed: false)
             _client.onMessage { receivedData in
                 let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, expectedFrame, "The payload \(payload) doesn't equal the expected \(expectedFrame)")
+                XCTAssertEqual(payload, expectedFrame, "The payload recieved \(payload) is not equal to expected payload \(expectedFrame).")
                 expectation.fulfill()
             }
         })
@@ -91,7 +91,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, expectedBinaryPayload, "The payload \(payload) doesn't equal the expected \(expectedBinaryPayload)")
+                XCTAssertEqual(payload, expectedBinaryPayload, "The payload recieved \(payload) is not equal to expected payload \(expectedBinaryPayload).")
                 expectation.fulfill()
             }
         }, {expectation in
@@ -100,7 +100,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true, compressed: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, expectedBinaryPayload, "The payload \(payload) doesn't equal the expected \(expectedBinaryPayload)")
+                XCTAssertEqual(payload, expectedBinaryPayload, "The payload recieved \(payload) is not equal to expected payload \(expectedBinaryPayload).")
                 expectation.fulfill()
             }
         }, { expectation in
@@ -109,7 +109,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true, compressed: false)
             _client.onMessage { receivedData in
                 let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, expectedBinaryPayload, "The payload \(payload) doesn't equal the expected \(expectedBinaryPayload)")
+                XCTAssertEqual(payload, expectedBinaryPayload, "The payload recieved \(payload) is not equal to expected payload \(expectedBinaryPayload).")
                 expectation.fulfill()
             }
         })
@@ -128,11 +128,11 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: bytes, opcode: .continuation, finalFrame: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getBytes(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, expectedBinaryPayload, "The payload \(payload) doesn't equal the expected \(expectedBinaryPayload)")
+                XCTAssertEqual(payload, expectedBinaryPayload, "The payload recieved \(payload) is not equal to expected payload \(expectedBinaryPayload).")
                 expectation.fulfill()
             }
             _client.onPong { opcode, _ in
-                XCTAssertEqual(opcode, WebSocketOpcode.pong, "Recieved opcode \(opcode) doesn't equal expected \(WebSocketOpcode.pong)")
+                XCTAssertEqual(opcode, WebSocketOpcode.pong, "Recieved opcode \(opcode) is not equal expected opcode \(WebSocketOpcode.pong).")
             }
 
         }
@@ -153,11 +153,11 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: text, opcode: .continuation, finalFrame: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)
-                XCTAssertEqual(payload, expectedPayload, "The payload \(receivedData) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(payload, expectedPayload, "The payload recieved \(String(describing: payload)) is not equal to expected payload \(expectedPayload).")
                 expectation.fulfill()
             }
             _client.onPong { opcode, _ in
-                XCTAssertEqual(opcode, WebSocketOpcode.pong, "Recieved opcode \(opcode) doesn't equal expected \(WebSocketOpcode.pong)")
+                XCTAssertEqual(opcode, WebSocketOpcode.pong, "Recieved opcode \(opcode) is not equal expected opcode \(WebSocketOpcode.pong)")
             }
         }
 
@@ -179,7 +179,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: mediumText, opcode: .continuation, finalFrame: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
+                XCTAssertEqual(payload, textExpectedPayload, "The payload recieved \(String(describing: payload)) is not equal to expected payload \(textExpectedPayload).")
                 expectation.fulfill()
             }
         }, { expectation in
@@ -188,7 +188,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: mediumText, opcode: .continuation, finalFrame: true, compressed: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
+                XCTAssertEqual(payload, textExpectedPayload, "The payload recieved \(String(describing: payload)) is not equal to expected payload \(textExpectedPayload).")
                 expectation.fulfill()
             }
         }, { expectation in
@@ -197,7 +197,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: mediumText, opcode: .continuation, finalFrame: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
+                XCTAssertEqual(payload, textExpectedPayload, "The payload recieved \(String(describing: payload)) is not equal to expected payload \(textExpectedPayload).")
                 expectation.fulfill()
             }
         })
@@ -215,7 +215,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: text, opcode: .continuation, finalFrame: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
+                XCTAssertEqual(payload, textExpectedPayload, "The payload recieved \(String(describing: payload)) is not equal to expected payload \(textExpectedPayload).")
                 expectation.fulfill()
             }
         }, { expectation in
@@ -224,7 +224,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: text, opcode: .continuation, finalFrame: true, compressed: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
+                XCTAssertEqual(payload, textExpectedPayload, "The payload recieved \(String(describing: payload)) is not equal to expected payload \(textExpectedPayload).")
                 expectation.fulfill()
             }
         }, { expectation in
@@ -233,7 +233,7 @@ class ComplexTests: KituraTest {
             _client.sendMessage(raw: text, opcode: .continuation, finalFrame: true)
             _client.onMessage { receivedData in
                 let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, textExpectedPayload, "The payload \(payload) doesn't equal the expected \(textExpectedPayload)")
+                XCTAssertEqual(payload, textExpectedPayload, "The payload recieved \(String(describing: payload)) is not equal to expected payload \(textExpectedPayload).")
                 expectation.fulfill()
             }
         })
@@ -251,7 +251,7 @@ class ComplexTests: KituraTest {
             _client.onMessage { receivedData in
                 count += 1
                 let payload = receivedData.getString(at: 0, length: receivedData.readableBytes)!
-                XCTAssertEqual(payload, text, "The payload \(payload) doesn't equal the expected \(text)")
+                XCTAssertEqual(payload, text, "The payload recieved \(String(describing: payload)) is not equal to expected payload \(text).")
                 if count == 2 {
                     expectation.fulfill()
                 }

@@ -54,7 +54,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("A text frame must be the first in the message")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -71,7 +71,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Control frames are only allowed to have payload up to and including 125 octets")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -90,7 +90,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Control frames must not be fragmented")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -106,7 +106,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Parsed a frame with an invalid operation code of 15")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -120,10 +120,10 @@ class ProtocolErrorTests: KituraTest {
                 closePayload.writeInteger(WebSocketCloseReasonCode.userDefined(2999).code())
             guard let _client = self.createClient() else { return }
             _client.sendMessage(data: closePayload, opcode: .connectionClose, finalFrame: true)
-            _client.onClose {channel, frame in
+            _client.onClose {channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
-                XCTAssertEqual(frame, expectedPayload, "The payload \(frame) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -140,7 +140,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Control frames are only allowed to have payload up to and including 125 octets")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -157,7 +157,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Continuation sent with prior binary or text frame")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -174,7 +174,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Continuation sent with prior binary or text frame")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -194,7 +194,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.invalidDataContents.code())
                 expectedPayload.writeString("Failed to convert received payload to UTF-8 String")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -214,7 +214,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.invalidDataContents.code())
                 expectedPayload.writeString("Failed to convert received close message to UTF-8 String")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -233,7 +233,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("A binary frame must be the first in the message")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -251,7 +251,7 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("Received a frame from a client that wasn't masked")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
@@ -267,11 +267,10 @@ class ProtocolErrorTests: KituraTest {
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("RSV1 must be 0 unless negotiated to define meaning for non-zero values")
-                XCTAssertEqual(data, expectedPayload, "The payload \(data) doesn't equal the expected   \(expectedPayload)")
+                XCTAssertEqual(data, expectedPayload, "The payload \(data) is not equal to the expected payload \(expectedPayload).")
                 _ = channel.close()
                 expectation.fulfill()
             }
         })
     }
 }
-

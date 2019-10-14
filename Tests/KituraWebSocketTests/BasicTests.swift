@@ -42,6 +42,7 @@ class BasicTests: KituraTest {
             ("testTextMediumMessage", testTextMediumMessage),
             ("testTextShortMessage", testTextShortMessage),
             ("testTextShortMessageWithQueryParams", testTextShortMessageWithQueryParams),
+            ("testSendCodableType",testSendCodableType),
             ("testNullCharacter", testNullCharacter),
             ("testUserDefinedCloseCode", testUserDefinedCloseCode),
             ("testUserCloseMessage", testUserCloseMessage)
@@ -60,21 +61,21 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient(requestKey: self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.sendMessage(raw: bytes, compressed: true)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         })
@@ -93,21 +94,21 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient(requestKey: self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.sendMessage(raw: bytes, compressed: true)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true, requestKey:self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         })
@@ -123,21 +124,21 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient(requestKey: self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, {expectation in
             guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.sendMessage(raw: bytes, compressed: true)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.sendMessage(bytes)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         })
@@ -163,7 +164,7 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient(negotiateCompression: true, requestKey: self.secWebKey) else { return }
             _client.ping()
             _client.onPong { code, _ in
-                XCTAssertEqual(code, WebSocketOpcode.pong, "Recieved opcode \(code) doesn't equal expected \(WebSocketOpcode.pong)")
+                XCTAssertEqual(code, WebSocketOpcode.pong, "Recieved opcode \(code) is not equal to expected \(WebSocketOpcode.pong)")
                 expectation.fulfill()
             }
         }
@@ -177,8 +178,8 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient(requestKey: self.secWebKey) else { return }
             _client.sendMessage(data: payloadBuffer, opcode: .ping, finalFrame: true, compressed: false)
             _client.onPong { code, data in
-                XCTAssertEqual(code, WebSocketOpcode.pong, "Recieved opcode \(code) doesn't equal expected \(WebSocketOpcode.pong)")
-                XCTAssertEqual(data, payloadBuffer, "The payload \(data) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(code, WebSocketOpcode.pong, "Recieved opcode \(code) is not equal to expected \(WebSocketOpcode.pong)")
+                XCTAssertEqual(data, payloadBuffer, "The received payload \(data) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }
@@ -241,21 +242,21 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient() else { return }
             _client.sendMessage(text)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true) else { return }
             _client.sendMessage(raw: text, compressed: true)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true) else { return }
             _client.sendMessage(text)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         })
@@ -273,28 +274,28 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient() else { return }
             _client.sendMessage(text)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true) else { return }
             _client.sendMessage(raw: text, compressed: true)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true) else { return }
             _client.sendMessage(text)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         })
     }
 
     func testTextShortMessage() {
-         register(closeReason: .noReasonCodeSent)
+        register(closeReason: .noReasonCodeSent)
         let textPayload = "Testing, testing 1,2,3"
         var payloadBuffer = ByteBufferAllocator().buffer(capacity: textPayload.count)
         payloadBuffer.writeString(textPayload)
@@ -302,21 +303,21 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient() else { return }
             _client.sendMessage(textPayload)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true) else { return }
             _client.sendMessage(raw: textPayload, compressed: true)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
         }
         }, { expectation in
             guard let _client = self.createClient(negotiateCompression: true) else { return }
             _client.sendMessage(textPayload)
             _client.onMessage { receivedData in
-                XCTAssertEqual(receivedData, payloadBuffer, "The payload \(receivedData) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(receivedData, payloadBuffer, "The received payload \(receivedData) is not equal to the expected payload \(payloadBuffer).")
                 expectation.fulfill()
             }
         })
@@ -331,13 +332,13 @@ class BasicTests: KituraTest {
             _client.onMessage { recieved in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeString("Keys and Values: p1,p2 and v1,v2")
-                XCTAssertEqual(recieved, expectedPayload, "The payload \(recieved) doesn't equal \(expectedPayload)")
+                XCTAssertEqual(recieved, expectedPayload, "The received payload \(recieved) is not equal to the expected payload \(expectedPayload).")
                 expectation.fulfill()
             }
         })
     }
 
-    func testWithStruct() {
+    func testSendCodableType() {
         register(closeReason: .noReasonCodeSent)
         performServerTest(asyncTasks: { expectation in
             struct Details: Codable, Equatable {
@@ -353,7 +354,7 @@ class BasicTests: KituraTest {
                 let jsonDecoder = JSONDecoder()
                 do {
                     let recievedDetails = try jsonDecoder.decode(Details.self, from: recieved.getData(at: 0, length: recieved.readableBytes)!)
-                    XCTAssertEqual(recievedDetails, textPayload, "The payload \(recievedDetails) doesn't equal \(textPayload)")
+                    XCTAssertEqual(recievedDetails, textPayload, "The received payload \(recievedDetails) is not equal to the expected payload \(textPayload).")
                     expectation.fulfill()
                 } catch {
                     print(error)
@@ -370,7 +371,7 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient() else { return }
             _client.sendMessage(data: closePayload, opcode: .connectionClose, finalFrame: true, compressed: false)
             _client.onClose { _, data in
-                XCTAssertEqual(data, closePayload, "The payload \(data) doesn't equal \(closePayload)")
+                XCTAssertEqual(data, closePayload, "The payload recieved \(data) is not equal to expected payload \(closePayload)")
                 expectation.fulfill()
             }
         }
@@ -386,7 +387,7 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient() else { return }
             _client.sendMessage(data: payloadBuffer, opcode: .connectionClose, finalFrame: true, compressed: false)
             _client.onClose { _, data in
-                XCTAssertEqual(data, payloadBuffer, "The payload \(data) doesn't equal the expected \(payloadBuffer)")
+                XCTAssertEqual(data, payloadBuffer, "The payload recieved \(data) is not equal to expected payload \(payloadBuffer)")
                 expectation.fulfill()
             }
         }
@@ -398,7 +399,8 @@ class BasicTests: KituraTest {
             guard let _client = self.createClient() else { return }
             _client.sendMessage("\u{00}")
             _client.onMessage { data in
-                XCTAssertEqual(data.getString(at: 0, length: data.readableBytes), "\u{00}", "The Payload doesn't Equal expected payload ")
+                let recievedText = data.getString(at: 0, length: data.readableBytes)
+                XCTAssertEqual(recievedText, "\u{00}", "The recieve payload \(String(describing: recievedText)) is not Equal to expected payload \u{00}")
                 expectation.fulfill()
             }
         }

@@ -32,13 +32,13 @@ class UpgradeErrors: KituraTest {
     func testNoService() {
         WebSocket.factory.clear()
         performServerTest { expectation in
-            guard let _client = WebSocketClient(host: "localhost", port: 8080, uri: self.servicePath, requestKey: self.secWebKey) else { return }
-            _client.onError { error, status in
+            guard let client = WebSocketClient(host: "localhost", port: 8080, uri: self.servicePath, requestKey: self.secWebKey) else { return }
+            client.onError { error, status in
                 XCTAssertEqual(status?.code, WebSocketClientError.badRequest.code(),
-                               "Server response status code \(String(describing: status?.code)) is not equal to \(String(describing: WebSocketClientError.webSocketUrlNotRegistered.code()))")
+                               "Server response status code \(String(describing: status?.code)) is not equal to recieved error \(String(describing: WebSocketClientError.webSocketUrlNotRegistered.code()))")
                 expectation.fulfill()
             }
-            _client.makeConnection()
+            client.makeConnection()
         }
     }
 }
