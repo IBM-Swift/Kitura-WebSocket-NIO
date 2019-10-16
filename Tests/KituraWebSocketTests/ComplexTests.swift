@@ -134,9 +134,7 @@ class ComplexTests: KituraTest {
             _client.onPong { opcode, _ in
                 XCTAssertEqual(opcode, WebSocketOpcode.pong, "Recieved opcode \(opcode) is not equal expected opcode \(WebSocketOpcode.pong).")
             }
-
         }
-
     }
 
     func testPingBetweenTextFrames() {
@@ -160,7 +158,6 @@ class ComplexTests: KituraTest {
                 XCTAssertEqual(opcode, WebSocketOpcode.pong, "Recieved opcode \(opcode) is not equal expected opcode \(WebSocketOpcode.pong)")
             }
         }
-
     }
 
     func testTextShortAndMediumFrames() {

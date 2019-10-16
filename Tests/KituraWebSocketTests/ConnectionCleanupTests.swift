@@ -59,7 +59,7 @@ class ConnectionCleanupTests: KituraTest {
             }
             let delegate = ClientDelegate(client: client)
             client.delegate = delegate
-            client.makeConnection()
+            client.connect()
             sleep(4)
             XCTAssertTrue(client.isConnected)
             expectation.fulfill()
@@ -74,14 +74,14 @@ class ConnectionCleanupTests: KituraTest {
                                XCTFail("Unable to create WebSocketClient")
                                return
                        }
-            client1.makeConnection()
+            client1.connect()
             guard let client2 = WebSocketClient(host: "localhost", port: 8080, uri: "/wstester", requestKey: self.secWebKey) else {
                     XCTFail("Unable to create WebSocketClient")
                     return
             }
             let delegate = ClientDelegate(client: client2)
             client2.delegate = delegate
-            client2.makeConnection()
+            client2.connect()
 
             sleep(4)
             XCTAssertFalse(client1.isConnected)
@@ -91,6 +91,7 @@ class ConnectionCleanupTests: KituraTest {
     }
 }
 
+// Implements WebSocketClient Callback functions referenced by protocol `WebSocketClientDelegate`
 class ClientDelegate: WebSocketClientDelegate {
     weak var client: WebSocketClient?
 
