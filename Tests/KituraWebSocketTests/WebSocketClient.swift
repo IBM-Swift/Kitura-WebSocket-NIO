@@ -61,7 +61,7 @@ class WebSocketClient {
     //                   does not accept connections from non-WebSocket clients
     //     - negotiateCompression: Parameter to negotiate compression. Setting this parameter to `true` adds the Headers neccesary for negotiating compression
     //                              with server while building the upgrade request. This parameter is set to `false` by default.
-    //     - maxWindowbits: Size of the LZ77 sliding window used in compression. valid values are between 8..15 bits.
+    //     - maxWindowbits: Size of the LZ77 sliding window used in compression, valid values are between 8..15 bits.
     //                      An endpoint is by default configured with value of 15.
     //     - contextTakeover: Parameter to configure the Context Takeover of the WebSocket Connection.
     //     - maxFrameSize : Maximum allowable frame size of WebSocket client is configured using this parameter.
@@ -114,7 +114,7 @@ class WebSocketClient {
         sendMessage(data: data, opcode: .ping)
     }
 
-    // This function pong frame to the connected server
+    // Sends a pong frame to the connected server
     //
     //             client.pong()
     //
@@ -353,6 +353,7 @@ class WebSocketClient {
     }
 }
 
+// WebSocket Handler which recieves data over WebSocket Connection
 class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
     typealias InboundIn = WebSocketFrame
 
@@ -430,6 +431,7 @@ class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
     }
 }
 
+// This handler is used to send WebSocketUpgrade ugrade request to server
 class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
 
     typealias InboundIn = HTTPClientResponsePart
