@@ -26,6 +26,9 @@ import XCTest
     import Glibc
 #endif
 
+// A global EventLoopGroup for the WebSocketClient to use.
+fileprivate let wsClientGlobalELG = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+
 class WebSocketClient {
 
     let requestKey: String
@@ -81,7 +84,7 @@ class WebSocketClient {
         self.maxFrameSize = maxFrameSize
     }
 
-    let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+    let group = wsClientGlobalELG
 
     public var delegate: WebSocketClientDelegate? = nil
 
@@ -345,11 +348,7 @@ class WebSocketClient {
     }
 
     fileprivate func disconnect()  {
-        do {
-            try self.group.syncShutdownGracefully()
-        } catch {
-            return
-        }
+        // Do not close eventLoopGroup as it is shared globally between clients
     }
 }
 
