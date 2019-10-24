@@ -210,7 +210,6 @@ class WebSocketClient {
         do {
             let jsonData = try jsonEncoder.encode(model)
             let string = String(data: jsonData, encoding: .utf8)!
-            print("String:",string)
             var buffer = ByteBufferAllocator().buffer(capacity: string.count)
             buffer.writeString(string)
             sendMessage(data: buffer, opcode: opcode, finalFrame: finalFrame, compressed: compressed)
