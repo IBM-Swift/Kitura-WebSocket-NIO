@@ -17,10 +17,11 @@
 import Foundation
 import NIO
 import NIOHTTP1
+import NIOSSL
 import NIOWebSocket
 import Dispatch
 import XCTest
-@testable import KituraWebSocket
+import WebSocketCompression
 
 #if os(Linux)
     import Glibc
@@ -40,11 +41,14 @@ class WebSocketClient {
     public var maxWindowBits: Int32
     public var contextTakeover: ContextTakeover
     public var maxFrameSize: Int
+//    var sslEnabled: Bool = false
 
     //  This semaphore signals when the client successfully recieves the Connection upgrade response from remote server
     //  Ensures that webSocket frames are sent on channel only after the connection is successfully upgraded to WebSocket Connection
 
     let upgraded = DispatchSemaphore(value: 0)
+
+    let callBackSync = DispatchQueue(label: "callback.sync.queue")
 
     // Create a new `WebSocketClient`.
     //
@@ -83,6 +87,19 @@ class WebSocketClient {
         self.contextTakeover = contextTakeover
         self.maxFrameSize = maxFrameSize
     }
+
+    public init?(_ urlString: String = "wss://localhost:8080/") {
+        self.requestKey = "test"
+        let url = URL(string: urlString)
+        self.host = (url!.host!)
+        self.port = (url!.port!)
+        self.uri = url!.path
+        self.maxFrameSize = 24
+        self.negotiateCompression = false
+        self.maxWindowBits = 15
+        self.contextTakeover = .both
+//        self.sslEnabled = (url?.scheme == "wss")
+     }
 
     let group = wsClientGlobalELG
 
@@ -296,15 +313,80 @@ class WebSocketClient {
     // Stored callbacks
     var onOpenCallback: (Channel) -> Void = {_ in }
 
-    var onCloseCallback: (Channel, ByteBuffer) -> Void = { _,_ in }
+    var _errorCallBack: (Error?, HTTPResponseStatus?) -> Void = { _,_  in }
 
-    var onMessageCallback: (ByteBuffer) -> Void = { _ in }
+     var onErrorCallBack: (Error?, HTTPResponseStatus?) -> Void {
+         get {
+             return callBackSync.sync {
+                 return _errorCallBack
+             }
+         }
+         set {
+             callBackSync.sync {
+                 _errorCallBack = newValue
+             }
+         }
+     }
 
-    var onPingCallback: (ByteBuffer) -> Void = { _ in }
+    var _closeCallback: (Channel, ByteBuffer) -> Void = { _,_ in }
 
-    var onPongCallback: (WebSocketOpcode, ByteBuffer) -> Void = { _,_ in}
+    var onCloseCallback: (Channel, ByteBuffer) -> Void {
+        get {
+            return callBackSync.sync {
+                return _closeCallback
+            }
+        }
+        set {
+            callBackSync.sync {
+                _closeCallback = newValue
+            }
+        }
+    }
 
-    var onErrorCallBack: (Error?, HTTPResponseStatus?) -> Void = { _,_  in }
+    var onMessageCallback: (ByteBuffer) -> Void {
+        get {
+            return callBackSync.sync {
+                return _messageCallBack
+            }
+        }
+        set {
+            callBackSync.sync {
+                _messageCallBack = newValue
+            }
+        }
+    }
+
+    var _messageCallBack : (ByteBuffer) -> Void = { _ in }
+    
+    var _pingCallback: (ByteBuffer) -> Void = { _ in }
+    
+    var onPingCallback: (ByteBuffer) -> Void {
+        get {
+            return callBackSync.sync {
+                return _pingCallback
+            }
+        }
+        set {
+            callBackSync.sync {
+                _pingCallback = newValue
+            }
+        }
+    }
+
+    var _pongCallback: (WebSocketOpcode, ByteBuffer) -> Void = { _,_ in}
+
+    var onPongCallback: (WebSocketOpcode, ByteBuffer) -> Void {
+        get {
+            return callBackSync.sync {
+                return _pongCallback
+            }
+        }
+        set {
+            callBackSync.sync {
+                _pongCallback = newValue
+            }
+        }
+    }
 
     // callback functions
     // These functions are called when client gets reply from another endpoint
@@ -321,7 +403,8 @@ class WebSocketClient {
     //
 
     public func onMessage(_ callback: @escaping (ByteBuffer) -> Void) {
-        executeOnEventLoop { self.onMessageCallback = callback }
+        self.onMessageCallback = callback
+//        executeOnEventLoop { self.onMessageCallback = callback }
     }
 
     public func onOpen(_ callback: @escaping (Channel) -> Void) {
@@ -329,20 +412,24 @@ class WebSocketClient {
     }
 
     public func onClose(_ callback: @escaping (Channel, ByteBuffer) -> Void) {
-        executeOnEventLoop { self.onCloseCallback = callback }
+        self.onCloseCallback = callback
+//        executeOnEventLoop { self.onCloseCallback = callback }
     }
 
     public func onPing(_ callback: @escaping (ByteBuffer) -> Void) {
-        executeOnEventLoop { self.onPingCallback = callback }
+        self.onPingCallback = callback
+//        executeOnEventLoop { self.onPingCallback = callback }
     }
 
     public func onPong(_ callback: @escaping (WebSocketOpcode, ByteBuffer) -> Void) {
-        executeOnEventLoop { self.onPongCallback  = callback }
+        self.onPongCallback  = callback
+//        executeOnEventLoop { self.onPongCallback  = callback }
     }
 
     public func onError(_ callback: @escaping (Error?, HTTPResponseStatus?) -> Void) {
         self.onErrorCallBack  = callback
     }
+
 
     private func executeOnEventLoop(_ code: @escaping () -> Void) {
         self.channel?.eventLoop.execute(code)
@@ -431,7 +518,7 @@ class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
 class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
 
     typealias InboundIn = HTTPClientResponsePart
-    unowned var client: WebSocketClient
+    var client: WebSocketClient
 
     init( client: WebSocketClient) {
         self.client = client
@@ -500,7 +587,6 @@ class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
                 break
             }
         }
-        client.disconnect()
     }
 }
 

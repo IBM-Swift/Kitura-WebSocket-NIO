@@ -112,6 +112,9 @@ class ComplexTests: KituraTest {
                 XCTAssertEqual(payload, expectedBinaryPayload, "The payload recieved \(payload) is not equal to expected payload \(expectedBinaryPayload).")
                 expectation.fulfill()
             }
+        }, { expectation in
+            let _client = try! WebSocketClient("wss://localhost:8080/chat")
+            expectation.fulfill()
         })
     }
 

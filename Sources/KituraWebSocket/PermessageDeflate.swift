@@ -15,6 +15,7 @@
  */
 
 import NIO
+import WebSocketCompression
 
 // An extension that implements WebSocket compression through the permessage-deflate algorithm
 // RFC 7692: https://tools.ietf.org/html/rfc7692
