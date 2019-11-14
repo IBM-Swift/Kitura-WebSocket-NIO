@@ -16,7 +16,7 @@ matrix:
       dist: xenial
       sudo: required
       services: docker
-      env: DOCKER_IMAGE=swift:5.0.3-xenial SWIFT_SNAPSHOT=5.0.3 DOCKER_PRIVILEGED=true DOCKER_PACKAGES="libz-dev" SWIFT_TEST_ARGS="--sanitize=thread"
+      env: DOCKER_IMAGE=swift:5.0.3-xenial SWIFT_SNAPSHOT=5.0.3 DOCKER_PRIVILEGED=true DOCKER_PACKAGES="libz-dev"
     - os: linux
       dist: xenial
       sudo: required
