@@ -16,8 +16,8 @@
 
 import Foundation
 import KituraNet
-import KituraWebSocket
 import Dispatch
+import KituraWebSocket
 
 // A test WebSocket service used for running Autobahn tests in the CI
 class EchoService: WebSocketService {

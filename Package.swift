@@ -44,6 +44,6 @@ let package = Package(
             dependencies: ["KituraNet", "KituraWebSocket", "WebSocketCompression"]),
         .testTarget(
             name: "KituraWebSocketTests",
-            dependencies: ["KituraWebSocket", "Cryptor", "WebSocketCompression"])
+            dependencies: ["Cryptor", "WebSocketCompression", "KituraWebSocket"])
     ]
 )

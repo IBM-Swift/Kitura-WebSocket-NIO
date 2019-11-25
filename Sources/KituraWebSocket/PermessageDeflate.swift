@@ -29,6 +29,8 @@ class PermessageDeflate: WebSocketProtocolExtension {
         var inflaterMaxWindowBits: Int32 = 15
         var clientNoContextTakeover = false
         var serverNoContextTakeover = false
+        let compressor: WebSocketCompressor
+        let decompressor: WebSocketDecompressor
 
         // Four parameters to handle:
         // * server_max_window_bits: the LZ77 sliding window size used by the server for compression
@@ -76,8 +78,11 @@ class PermessageDeflate: WebSocketProtocolExtension {
                 serverNoContextTakeover = true
             }
         }
-        return [PermessageDeflateCompressor(maxWindowBits: deflaterMaxWindowBits, noContextTakeOver: serverNoContextTakeover),
-                   PermessageDeflateDecompressor(maxWindowBits: inflaterMaxWindowBits, noContextTakeOver: clientNoContextTakeover)]
+        let deflater = PermessageDeflateCompressor(noContextTakeOver: serverNoContextTakeover, maxWindowBits: deflaterMaxWindowBits)
+        let inflater = PermessageDeflateDecompressor(noContextTakeOver: clientNoContextTakeover, maxWindowBits: inflaterMaxWindowBits)
+        compressor = WebSocketCompressor(deflater: deflater)
+        decompressor = WebSocketDecompressor(inflater: inflater)
+        return [compressor, decompressor]
     }
 
     // Comprehend the Sec-WebSocket-Extensions request header and build a response header

@@ -282,12 +282,13 @@ class WebSocketClient {
             self.upgraded.signal()
         }
         let slidingWindowBits = windowSize(header: response.headers)
-        let compressor = PermessageDeflateCompressor(maxWindowBits: slidingWindowBits,
-                                                     noContextTakeOver: self.contextTakeover.clientNoContextTakeover)
-        let decompressor = PermessageDeflateDecompressor(maxWindowBits: slidingWindowBits,
-                                                         noContextTakeOver: self.contextTakeover.serverNoContextTakeover)
+        let deflater = PermessageDeflateCompressor(noContextTakeOver: self.contextTakeover.clientNoContextTakeover,
+                                                   maxWindowBits: slidingWindowBits)
+        let inflater = PermessageDeflateDecompressor(noContextTakeOver: self.contextTakeover.serverNoContextTakeover,
+                                                     maxWindowBits: slidingWindowBits)
+        
         if self.negotiateCompression {
-            return channel.pipeline.addHandlers([compressor, decompressor, WebSocketMessageHandler(client: self)])
+            return channel.pipeline.addHandlers([WebSocketCompressor(deflater: deflater), WebSocketDecompressor(inflater: inflater), WebSocketMessageHandler(client: self)])
         } else {
             return channel.pipeline.addHandler(WebSocketMessageHandler(client: self))
         }
@@ -564,6 +565,7 @@ class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
             value.append("; " + "client_max_window_bits; server_max_window_bits=" + String(client.maxWindowBits))
         }
         value.append(client.contextTakeover.header())
+        print(value)
         return value
     }
 
