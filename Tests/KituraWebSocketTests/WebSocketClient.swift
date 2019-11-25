@@ -565,7 +565,6 @@ class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
             value.append("; " + "client_max_window_bits; server_max_window_bits=" + String(client.maxWindowBits))
         }
         value.append(client.contextTakeover.header())
-        print(value)
         return value
     }
 
