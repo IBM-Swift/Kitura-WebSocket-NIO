@@ -88,7 +88,7 @@ class WebSocketClient {
         self.maxFrameSize = maxFrameSize
     }
 
-    public init?(_ urlString: String = "wss://localhost:8080/") {
+    public init?(_ urlString: String = "ws://localhost:8080/") {
         self.requestKey = "test"
         let url = URL(string: urlString)
         self.host = (url!.host!)
@@ -98,7 +98,6 @@ class WebSocketClient {
         self.negotiateCompression = false
         self.maxWindowBits = 15
         self.contextTakeover = .both
-//        self.sslEnabled = (url?.scheme == "wss")
      }
 
     let group = wsClientGlobalELG
@@ -405,39 +404,26 @@ class WebSocketClient {
 
     public func onMessage(_ callback: @escaping (ByteBuffer) -> Void) {
         self.onMessageCallback = callback
-//        executeOnEventLoop { self.onMessageCallback = callback }
     }
 
     public func onOpen(_ callback: @escaping (Channel) -> Void) {
-        executeOnEventLoop { self.onOpenCallback = callback }
+        self.onOpenCallback = callback
     }
 
     public func onClose(_ callback: @escaping (Channel, ByteBuffer) -> Void) {
         self.onCloseCallback = callback
-//        executeOnEventLoop { self.onCloseCallback = callback }
     }
 
     public func onPing(_ callback: @escaping (ByteBuffer) -> Void) {
         self.onPingCallback = callback
-//        executeOnEventLoop { self.onPingCallback = callback }
     }
 
     public func onPong(_ callback: @escaping (WebSocketOpcode, ByteBuffer) -> Void) {
         self.onPongCallback  = callback
-//        executeOnEventLoop { self.onPongCallback  = callback }
     }
 
     public func onError(_ callback: @escaping (Error?, HTTPResponseStatus?) -> Void) {
         self.onErrorCallBack  = callback
-    }
-
-
-    private func executeOnEventLoop(_ code: @escaping () -> Void) {
-        self.channel?.eventLoop.execute(code)
-    }
-
-    fileprivate func disconnect()  {
-        // Do not close eventLoopGroup as it is shared globally between clients
     }
 }
 
@@ -519,7 +505,7 @@ class WebSocketMessageHandler: ChannelInboundHandler, RemovableChannelHandler {
 class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
 
     typealias InboundIn = HTTPClientResponsePart
-    var client: WebSocketClient
+    unowned var client: WebSocketClient
 
     init( client: WebSocketClient) {
         self.client = client
