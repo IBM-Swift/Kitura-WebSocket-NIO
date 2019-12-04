@@ -15,8 +15,12 @@
  */
 
 import NIO
-import CZlib
 import NIOWebSocket
+#if os(Linux)
+import CZlib
+#else
+import zlib
+#endif
 
 // Implementation of `PermessageDeflateDecompressor` a `ChannelInboundHandler` that intercepts incoming WebSocket frames, inflating the payload and
 // writing the new frames back to the channel, to be eventually received by WebSocketConnection.

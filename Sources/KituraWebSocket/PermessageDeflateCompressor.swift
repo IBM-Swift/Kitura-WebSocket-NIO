@@ -16,7 +16,11 @@
 
 import NIO
 import NIOWebSocket
+#if os(Linux)
 import CZlib
+#else
+import zlib
+#endif
 
 // Implementation of a deflater using zlib. This ChannelOutboundHandler acts like an interceptor, consuming original frames written by
 // WebSocketConnection, compressing the payload and writing the new frames with a compressed payload onto the channel.

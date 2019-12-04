@@ -17,7 +17,11 @@
 import XCTest
 import Foundation
 import NIO
+#if os(Linux)
 import CZlib
+#else
+import zlib
+#endif
 
 @testable import KituraWebSocket
 
