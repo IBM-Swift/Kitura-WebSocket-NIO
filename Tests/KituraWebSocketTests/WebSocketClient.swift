@@ -41,7 +41,6 @@ class WebSocketClient {
     public var maxWindowBits: Int32
     public var contextTakeover: ContextTakeover
     public var maxFrameSize: Int
-//    var sslEnabled: Bool = false
 
     //  This semaphore signals when the client successfully recieves the Connection upgrade response from remote server
     //  Ensures that webSocket frames are sent on channel only after the connection is successfully upgraded to WebSocket Connection
@@ -311,82 +310,30 @@ class WebSocketClient {
     }
 
     // Stored callbacks
-    var onOpenCallback: (Channel) -> Void = {_ in }
+    var onOpenCallback: (Channel) -> Void  = { _ in }
 
-    var _errorCallBack: (Error?, HTTPResponseStatus?) -> Void = { _,_  in }
+    var onCloseCallback: (Channel, ByteBuffer) -> Void = { _,_ in }
 
-     var onErrorCallBack: (Error?, HTTPResponseStatus?) -> Void {
-         get {
-             return callBackSync.sync {
-                 return _errorCallBack
-             }
-         }
-         set {
-             callBackSync.sync {
-                 _errorCallBack = newValue
-             }
-         }
-     }
+    var onMessageCallback: (ByteBuffer) -> Void = { _ in }
 
-    var _closeCallback: (Channel, ByteBuffer) -> Void = { _,_ in }
+    var onPingCallback: (ByteBuffer) -> Void = { _ in }
 
-    var onCloseCallback: (Channel, ByteBuffer) -> Void {
+    var onPongCallback: (WebSocketOpcode, ByteBuffer) -> Void = { _,_ in }
+
+    var _errorCallBack: (Error?, HTTPResponseStatus?) -> Void = { _,_ in }
+
+    var onErrorCallBack: (Error?, HTTPResponseStatus?) -> Void {
+
         get {
             return callBackSync.sync {
-                return _closeCallback
+                return _errorCallBack
             }
         }
         set {
-            callBackSync.sync {
-                _closeCallback = newValue
-            }
+            _errorCallBack = newValue
         }
     }
 
-    var onMessageCallback: (ByteBuffer) -> Void {
-        get {
-            return callBackSync.sync {
-                return _messageCallBack
-            }
-        }
-        set {
-            callBackSync.sync {
-                _messageCallBack = newValue
-            }
-        }
-    }
-
-    var _messageCallBack : (ByteBuffer) -> Void = { _ in }
-    
-    var _pingCallback: (ByteBuffer) -> Void = { _ in }
-    
-    var onPingCallback: (ByteBuffer) -> Void {
-        get {
-            return callBackSync.sync {
-                return _pingCallback
-            }
-        }
-        set {
-            callBackSync.sync {
-                _pingCallback = newValue
-            }
-        }
-    }
-
-    var _pongCallback: (WebSocketOpcode, ByteBuffer) -> Void = { _,_ in}
-
-    var onPongCallback: (WebSocketOpcode, ByteBuffer) -> Void {
-        get {
-            return callBackSync.sync {
-                return _pongCallback
-            }
-        }
-        set {
-            callBackSync.sync {
-                _pongCallback = newValue
-            }
-        }
-    }
 
     // callback functions
     // These functions are called when client gets reply from another endpoint
@@ -403,27 +350,31 @@ class WebSocketClient {
     //
 
     public func onMessage(_ callback: @escaping (ByteBuffer) -> Void) {
-        self.onMessageCallback = callback
+        self.executeOnEventLoop { self.onMessageCallback = callback }
     }
 
     public func onOpen(_ callback: @escaping (Channel) -> Void) {
-        self.onOpenCallback = callback
+        self.executeOnEventLoop { self.onOpenCallback = callback }
     }
 
     public func onClose(_ callback: @escaping (Channel, ByteBuffer) -> Void) {
-        self.onCloseCallback = callback
+        self.executeOnEventLoop { self.onCloseCallback = callback }
     }
 
     public func onPing(_ callback: @escaping (ByteBuffer) -> Void) {
-        self.onPingCallback = callback
+        self.executeOnEventLoop { self.onPingCallback = callback }
     }
 
     public func onPong(_ callback: @escaping (WebSocketOpcode, ByteBuffer) -> Void) {
-        self.onPongCallback  = callback
+        self.executeOnEventLoop { self.onPongCallback = callback }
     }
 
     public func onError(_ callback: @escaping (Error?, HTTPResponseStatus?) -> Void) {
-        self.onErrorCallBack  = callback
+        self.onErrorCallBack = callback
+    }
+
+    private func executeOnEventLoop(_ code: @escaping () -> Void) {
+        self.channel?.eventLoop.execute(code)
     }
 }
 
@@ -507,7 +458,7 @@ class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
     typealias InboundIn = HTTPClientResponsePart
     unowned var client: WebSocketClient
 
-    init( client: WebSocketClient) {
+    init(client: WebSocketClient) {
         self.client = client
     }
 
@@ -528,7 +479,25 @@ class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
         let response = unwrapInboundIn(data)
         switch response {
         case .head(let header) :
-            upgradeFailure(status: header.status)
+            if let delegate = client.delegate {
+                switch header.status {
+                case .badRequest:
+                    delegate.onError(error: WebSocketClientError.badRequest, status: header.status)
+                case .notFound:
+                    delegate.onError(error: WebSocketClientError.webSocketUrlNotRegistered, status: header.status)
+                default :
+                    break
+                }
+            } else {
+                switch header.status {
+                case .badRequest:
+                    client.onErrorCallBack(WebSocketClientError.badRequest, header.status)
+                case .notFound:
+                    client.onErrorCallBack(WebSocketClientError.webSocketUrlNotRegistered, header.status)
+                default :
+                    break
+                }
+            }
         case .body(_):
             break
         case .end(_):
@@ -554,27 +523,6 @@ class HTTPClientHandler: ChannelInboundHandler, RemovableChannelHandler {
         return value
     }
 
-    func upgradeFailure(status: HTTPResponseStatus) {
-        if let delegate = client.delegate {
-            switch status {
-            case .badRequest:
-                delegate.onError(error: WebSocketClientError.badRequest, status: status)
-            case .notFound:
-                delegate.onError(error: WebSocketClientError.webSocketUrlNotRegistered, status: status)
-            default :
-                break
-            }
-        } else {
-            switch status {
-            case .badRequest:
-                client.onErrorCallBack(WebSocketClientError.badRequest, status)
-            case .notFound:
-                client.onErrorCallBack(WebSocketClientError.webSocketUrlNotRegistered, status)
-            default :
-                break
-            }
-        }
-    }
 }
 
 extension HTTPVersion {

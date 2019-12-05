@@ -200,7 +200,8 @@ class BasicTests: KituraTest {
     func testSuccessfulRemove() {
         register(closeReason: .noReasonCodeSent)
         performServerTest { expectation in
-            guard let _client1 = self.createClient() else { return }
+            guard let _client1 = WebSocketClient(host: "localhost", port: 8080, uri: self.servicePath, requestKey: "test") else { return }
+            _client1.connect()
             XCTAssertTrue(_client1.isConnected, "Client not connected")
             WebSocket.unregister(path: self.servicePath)
             guard let _client2 = WebSocketClient(host: "localhost", port: 8080, uri: self.servicePath, requestKey: "test") else { return }

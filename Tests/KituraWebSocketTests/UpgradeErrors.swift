@@ -17,6 +17,7 @@
 import XCTest
 import Foundation
 import Dispatch
+import NIOHTTP1
 
 @testable import KituraWebSocket
 @testable import KituraNet

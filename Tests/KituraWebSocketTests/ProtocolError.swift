@@ -37,7 +37,7 @@ class ProtocolErrorTests: KituraTest {
             ("testInvalidUTFCloseMessage", testInvalidUTFCloseMessage),
             ("testTextAndBinaryFrames", testTextAndBinaryFrames),
             ("testUnmaskedFrame", testUnmaskedFrame),
-            ("testInvalidRSVCode", testInvalidRSVCode)
+            ("testInvalidRSVCode", testInvalidRSVCode),
         ]
     }
 
@@ -46,7 +46,6 @@ class ProtocolErrorTests: KituraTest {
         performServerTest { expectation in
             let bytes:[UInt8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e]
             let textPayload = "testing 1 2 3"
-
             guard let _client = self.createClient() else { return }
             _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: false, compressed: false)
             _client.sendMessage(raw: textPayload, opcode: .text, finalFrame: true, compressed: false)
@@ -219,7 +218,7 @@ class ProtocolErrorTests: KituraTest {
             guard let _client = self.createClient() else { return }
             _client.sendMessage(raw: textPayload, opcode: .text, finalFrame: false)
             _client.sendMessage(raw: bytes, opcode: .binary, finalFrame: true)
-            _client.onClose {channel, data in
+            _client.onClose { channel, data in
                 var expectedPayload = ByteBufferAllocator().buffer(capacity: 8)
                 expectedPayload.writeInteger(WebSocketCloseReasonCode.protocolError.code())
                 expectedPayload.writeString("A binary frame must be the first in the message")
@@ -231,7 +230,6 @@ class ProtocolErrorTests: KituraTest {
 
     func testUnmaskedFrame() {
         register(closeReason: .protocolError)
-
         performServerTest { expectation in
             guard let _client = self.createClient() else { return }
             _client.maskFrame = false

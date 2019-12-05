@@ -25,14 +25,14 @@ class ConnectionTests: KituraTest {
                 client.connect()
                 client.onClose { channel, _ in
                     service.queue.sync {
-                        guard service.disconnectClientId.count == 100 else { return }
-                    }
+                        if service.disconnectClientId.count == 100 {
                         XCTAssertEqual(service.connectClientId.sorted(),service.disconnectClientId.sorted(), "Client IDs from connect weren't client IDs from disconnect")
-                    expectation.fulfill()
+                        expectation.fulfill()
+                        } else { return }
+                    }
                 }
                 client.close()
             }
-
         }
     }
 }
