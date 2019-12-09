@@ -1,13 +1,7 @@
 import XCTest
 import Foundation
 import Dispatch
-import NIO
-import NIOWebSocket
-import NIOHTTP1
-
-import LoggerAPI
 @testable import KituraWebSocket
-import Socket
 
 class ConnectionTests: KituraTest {
 
@@ -25,10 +19,9 @@ class ConnectionTests: KituraTest {
                 client.connect()
                 client.onClose { channel, _ in
                     service.queue.sync {
-                        if service.disconnectClientId.count == 100 {
+                        guard service.disconnectClientId.count == 100  else { return }
                         XCTAssertEqual(service.connectClientId.sorted(),service.disconnectClientId.sorted(), "Client IDs from connect weren't client IDs from disconnect")
                         expectation.fulfill()
-                        } else { return }
                     }
                 }
                 client.close()
