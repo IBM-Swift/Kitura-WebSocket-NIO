@@ -330,7 +330,9 @@ class WebSocketClient {
             }
         }
         set {
-            _errorCallBack = newValue
+            _ = callBackSync.sync {
+                _errorCallBack = newValue
+            }
         }
     }
 
