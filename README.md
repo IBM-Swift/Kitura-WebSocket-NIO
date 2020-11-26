@@ -1,16 +1,16 @@
 
 <p align="center">
     <a href="http://kitura.io/">
-        <img src="https://raw.githubusercontent.com/IBM-Swift/Kitura/master/Sources/Kitura/resources/kitura-bird.svg?sanitize=true" height="100" alt="Kitura">
+        <img src="https://raw.githubusercontent.com/Kitura/Kitura/master/Sources/Kitura/resources/kitura-bird.svg?sanitize=true" height="100" alt="Kitura">
     </a>
 </p>
 
 <p align="center">
-    <a href="https://ibm-swift.github.io/Kitura-WebSocket/index.html">
+    <a href="https://kitura.github.io/Kitura-WebSocket/index.html">
     <img src="https://img.shields.io/badge/apidoc-KituraWebSocket-1FBCE4.svg?style=flat" alt="APIDoc">
     </a>
-    <a href="https://travis-ci.org/IBM-Swift/Kitura-WebSocket-NIO">
-    <img src="https://travis-ci.org/IBM-Swift/Kitura-WebSocket-NIO.svg?branch=master" alt="Build Status - Master">
+    <a href="https://travis-ci.org/Kitura/Kitura-WebSocket-NIO">
+    <img src="https://travis-ci.org/Kitura/Kitura-WebSocket-NIO.svg?branch=master" alt="Build Status - Master">
     </a>
     <img src="https://img.shields.io/badge/os-macOS-green.svg?style=flat" alt="macOS">
     <img src="https://img.shields.io/badge/os-linux-green.svg?style=flat" alt="Linux">
@@ -22,7 +22,7 @@
 
 # Kitura-WebSocket-NIO
 
-Kitura-WebSocket-NIO is a [swift-nio](https://github.com/apple/swift-nio) based immplementation of the [Kitura-WebSocket](https://github.com/IBM-Swift/Kitura-WebSocket) API. It provides Kitura based servers the ability to receive and send messages to clients using the WebSocket
+Kitura-WebSocket-NIO is a [swift-nio](https://github.com/apple/swift-nio) based immplementation of the [Kitura-WebSocket](https://github.com/Kitura/Kitura-WebSocket) API. It provides Kitura based servers the ability to receive and send messages to clients using the WebSocket
 protocol (RFC 6455). It is compatible with a variety of WebSocket clients, including:
 - The built-in WebSocket support in the Chrome, FireFox, and Safari browsers.
 - The NPM [websocket](https://www.npmjs.com/package/websocket) package.
@@ -50,10 +50,10 @@ Kitura-WebSocket-NIO also supports WebSocket compression using the permessage-de
 
 #### Add dependencies
 
-Add the `Kitura-WebSocket-NIO` package to the dependencies within your application’s `Package.swift` file. Substitute `"x.x.x"` with the latest `Kitura-WebSocket-NIO` [release](https://github.com/IBM-Swift/Kitura-WebSocket-NIO/releases).
+Add the `Kitura-WebSocket-NIO` package to the dependencies within your application’s `Package.swift` file. Substitute `"x.x.x"` with the latest `Kitura-WebSocket-NIO` [release](https://github.com/Kitura/Kitura-WebSocket-NIO/releases).
 
 ```swift
-.package(url: "https://github.com/IBM-Swift/Kitura-WebSocket-NIO.git", from: "x.x.x")
+.package(url: "https://github.com/Kitura/Kitura-WebSocket-NIO.git", from: "x.x.x")
 ```
 
 Add `Kitura-WebSocket` to your target's dependencies:
@@ -69,7 +69,7 @@ Add `Kitura-WebSocket` to your target's dependencies:
   ```
 
 ## API Overview
-The following is an overview of the Kitura-WebSocket APIs, for more information see the [API reference](https://ibm-swift.github.io/Kitura-WebSocket/index.html).
+The following is an overview of the Kitura-WebSocket APIs, for more information see the [API reference](https://kitura.github.io/Kitura-WebSocket/index.html).
 
 When using the WebSocket protocol, clients connect to WebSocket services running on a particular server. WebSocket services are identified on a particular server via a path. This path is sent in the upgrade request used to upgrade a connection from HTTP 1.1 to WebSocket.
 
@@ -138,7 +138,7 @@ WebSocket.unregister(path: String)
 This function is passed the path which the `WebSocketService` being unregistered was registered on.
 
 ## Autobahn TestSuite
-Kitura-WebSocket-NIO fully complies to the [Autobahn Testsuite](https://github.com/crossbario/autobahn-testsuite) for web sockets. To create an echo server and run this test suite against it, follow the instructions [here](https://github.com/IBM-Swift/Kitura-WebSocket-NIO/blob/master/AutobahnTests.md).
+Kitura-WebSocket-NIO fully complies to the [Autobahn Testsuite](https://github.com/crossbario/autobahn-testsuite) for web sockets. To create an echo server and run this test suite against it, follow the instructions [here](https://github.com/Kitura/Kitura-WebSocket-NIO/blob/master/AutobahnTests.md).
 
 ## Example - Simple
 This example is a simplistic chat service to demonstrate how to use the Kitura-WebSocket APIs.
@@ -170,9 +170,9 @@ import PackageDescription
 let package = Package(
     name: "ChatServer",
     dependencies: [
-         .package(url: "https://github.com/IBM-Swift/Kitura.git", .upToNextMinor(from: "x.x.x")),
-         .package(url: "https://github.com/IBM-Swift/HeliumLogger.git", from: "x.x.x"),
-         .package(url: "https://github.com/IBM-Swift/Kitura-WebSocket-NIO.git", from: "x.x.x")
+         .package(url: "https://github.com/Kitura/Kitura.git", .upToNextMinor(from: "x.x.x")),
+         .package(url: "https://github.com/Kitura/HeliumLogger.git", from: "x.x.x"),
+         .package(url: "https://github.com/Kitura/Kitura-WebSocket-NIO.git", from: "x.x.x")
     ],
     targets: [
         .target(
@@ -386,14 +386,14 @@ node chat.js localhost:8080
 As described above, the server echoes all text messages sent to it to all of the clients that have connected to it, with the exception of the client that sent the message. Therefore, in order to see the example in action you will need to connect more than one client to the server. The client can be run in several terminal windows on the same computer. You can then enter a message on one client and see it appear on another client and vice versa.
 
 ## Example - Advanced
-For a more complete example please see [Kitura-Sample](https://github.com/IBM-Swift/Kitura-Sample).
+For a more complete example please see [Kitura-Sample](https://github.com/Kitura/Kitura-Sample).
 
 ## API Documentation
-For more information visit our [API reference](https://ibm-swift.github.io/Kitura-WebSocket/index.html).
+For more information visit our [API reference](https://kitura.github.io/Kitura-WebSocket/index.html).
 
 ## Community
 
 We love to talk server-side Swift, and Kitura. Join our [Slack](http://swift-at-ibm-slack.mybluemix.net/) to meet the team!
 
 ## License
-This library is licensed under Apache 2.0. Full license text is available in [LICENSE](https://github.com/IBM-Swift/Kitura-WebSocket-NIO/blob/master/LICENSE.txt).
+This library is licensed under Apache 2.0. Full license text is available in [LICENSE](https://github.com/Kitura/Kitura-WebSocket-NIO/blob/master/LICENSE.txt).
